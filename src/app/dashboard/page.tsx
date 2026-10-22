@@ -43,6 +43,7 @@ import {
 import { 
   CourseItem, 
   AppSubscriptionItem, 
+  APP_SUBSCRIPTIONS,
   ServiceItem 
 } from "@/data/mockData";
 import { 
@@ -93,7 +94,7 @@ export default function UnifiedMasterPanel() {
   const [payouts, setPayouts] = useState<PayoutRequest[]>([]);
 
   // Subscriptions State
-  const [products, setProducts] = useState<AppSubscriptionItem[]>([]);
+  const [products, setProducts] = useState<AppSubscriptionItem[]>(APP_SUBSCRIPTIONS);
   const [subSearch, setSubSearch] = useState("");
   const [editingSubId, setEditingSubId] = useState<string | null>(null);
   const [editPricePKR, setEditPricePKR] = useState<number>(0);

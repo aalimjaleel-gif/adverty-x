@@ -20,11 +20,11 @@ import {
   UploadCloud
 } from "lucide-react";
 import { getStoredSubscriptions, fetchSubscriptionsFromServer, addOrder } from "@/lib/store";
-import { AppSubscriptionItem } from "@/data/mockData";
+import { AppSubscriptionItem, APP_SUBSCRIPTIONS } from "@/data/mockData";
 import AppCard from "@/components/subscriptions/AppCard";
 
 export default function SubscriptionsPage() {
-  const [products, setProducts] = useState<AppSubscriptionItem[]>([]);
+  const [products, setProducts] = useState<AppSubscriptionItem[]>(APP_SUBSCRIPTIONS);
   const [selectedCategory, setSelectedCategory] = useState<string>("ALL PRODUCTS");
   const [currency, setCurrency] = useState<"PKR" | "USD">("PKR");
   
@@ -51,23 +51,29 @@ export default function SubscriptionsPage() {
   };
 
   useEffect(() => {
-    setProducts(getStoredSubscriptions());
+    const initial = getStoredSubscriptions();
+    if (initial && initial.length > 0) setProducts(initial);
     fetchSubscriptionsFromServer().then((list) => {
       if (list && list.length > 0) setProducts(list);
     });
 
     const handleUpdate = () => {
-      setProducts(getStoredSubscriptions());
+      const updated = getStoredSubscriptions();
+      if (updated && updated.length > 0) setProducts(updated);
     };
     window.addEventListener("advertyx_subscriptions_updated", handleUpdate);
     return () => window.removeEventListener("advertyx_subscriptions_updated", handleUpdate);
   }, []);
 
-  const categories = ["ALL PRODUCTS", "DESIGN & EDIT", "ENTERTAINMENT", "VPN", "AI & PRODUCTIVITY"];
+  const defaultCategories = ["ALL PRODUCTS", "DESIGN & EDIT", "ENTERTAINMENT", "VPN", "AI & PRODUCTIVITY", "STREAMING"];
+  const categories = Array.from(new Set([
+    ...defaultCategories,
+    ...products.map(p => (p.category || "").toUpperCase().trim()).filter(Boolean)
+  ]));
 
   const filteredItems = selectedCategory === "ALL PRODUCTS"
     ? products
-    : products.filter((item) => item.category === selectedCategory);
+    : products.filter((item) => (item.category || "").toUpperCase().trim() === selectedCategory.toUpperCase().trim());
 
   const paymentAccounts = {
     JazzCash: { number: "03034581115", formattedNumber: "0303-4581115", title: "Ali Ahmed", type: "JazzCash Mobile Account" },

@@ -334,23 +334,47 @@ let hasFetchedServerSubscriptions = false;
 export async function fetchSubscriptionsFromServer(): Promise<AppSubscriptionItem[]> {
   try {
     const res = await fetch("/api/subscriptions", { cache: "no-store" });
-    if (!res.ok) return inMemorySubscriptions.length > 0 ? inMemorySubscriptions : APP_SUBSCRIPTIONS;
-    const serverSubs: AppSubscriptionItem[] = await res.json();
-    if (!Array.isArray(serverSubs) || serverSubs.length === 0) return inMemorySubscriptions;
+    let serverSubs: AppSubscriptionItem[] = [];
+    if (res.ok) {
+      try {
+        serverSubs = await res.json();
+      } catch (e) {}
+    }
 
-    // Server is the canonical source of truth
-    const dedupedMap = new Map<string, AppSubscriptionItem>();
-    const seenSlugs = new Set<string>();
+    // Read user's local subscriptions so newly added/edited items are NEVER lost
+    let localSubs: AppSubscriptionItem[] = [];
+    if (typeof window !== "undefined") {
+      try {
+        const raw = localStorage.getItem(SUBSCRIPTIONS_STORAGE_KEY);
+        if (raw) localSubs = JSON.parse(raw);
+      } catch (e) {}
+    }
 
-    serverSubs.forEach(s => {
-      const key = s.slug || s.id;
-      if (!seenSlugs.has(key)) {
-        seenSlugs.add(key);
-        dedupedMap.set(s.id, s);
-      }
-    });
+    const map = new Map<string, AppSubscriptionItem>();
 
-    const merged = Array.from(dedupedMap.values());
+    // 1. Populate base from server or default mockData
+    const baseList = Array.isArray(serverSubs) && serverSubs.length > 0 ? serverSubs : APP_SUBSCRIPTIONS;
+    baseList.forEach(s => map.set(s.id, s));
+
+    // 2. User's local subscriptions take priority and are preserved
+    if (Array.isArray(localSubs)) {
+      localSubs.forEach(localItem => {
+        if (!map.has(localItem.id)) {
+          map.set(localItem.id, localItem);
+          // Sync new local item to server
+          fetch("/api/subscriptions", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(localItem)
+          }).catch(() => {});
+        } else {
+          // If local item has updated details (e.g. customized price/warranty), keep local
+          map.set(localItem.id, localItem);
+        }
+      });
+    }
+
+    const merged = Array.from(map.values());
     inMemorySubscriptions = merged;
     if (typeof window !== "undefined") {
       localStorage.setItem(SUBSCRIPTIONS_STORAGE_KEY, JSON.stringify(merged));
