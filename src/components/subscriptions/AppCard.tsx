@@ -196,16 +196,31 @@ export default function AppCard({
 
       {/* Bottom Section: Price & Order Action */}
       <div className="space-y-3 pt-2 text-center">
-        <div className="text-2xl font-black text-slate-900 tracking-tight">
-          {currency === "PKR" ? `Rs ${item.pricePKR.toLocaleString()}` : `$${item.priceUSD.toFixed(2)}`}
+        <div className="text-2xl font-black tracking-tight min-h-[36px] flex items-center justify-center">
+          {item.pricePKR === 0 ? (
+            <div className="flex items-center justify-center gap-2">
+              <span className="px-3 py-1 rounded-full text-xs font-black bg-emerald-100 text-emerald-800 tracking-wider uppercase border border-emerald-300 shadow-xs">
+                🎁 100% FREE
+              </span>
+              <span className="text-emerald-600 font-black text-2xl">Rs 0</span>
+            </div>
+          ) : (
+            <span className="text-slate-900">
+              {currency === "PKR" ? `Rs ${item.pricePKR.toLocaleString()}` : `$${item.priceUSD.toFixed(2)}`}
+            </span>
+          )}
         </div>
 
         {item.inStock ? (
           <button
             onClick={() => onOrder(item)}
-            className="w-full py-3 rounded-2xl bg-brand-600 hover:bg-brand-700 active:bg-brand-800 text-white text-xs font-bold uppercase tracking-wider transition-all shadow-sm hover:shadow-brand-500/25"
+            className={`w-full py-3 rounded-2xl text-xs font-bold uppercase tracking-wider transition-all shadow-sm cursor-pointer ${
+              item.pricePKR === 0
+                ? "bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white shadow-emerald-500/30 ring-2 ring-emerald-400"
+                : "bg-brand-600 hover:bg-brand-700 active:bg-brand-800 text-white shadow-brand-500/25"
+            }`}
           >
-            Order Now
+            {item.pricePKR === 0 ? "🎁 Claim Free Access" : "Order Now"}
           </button>
         ) : (
           <button
