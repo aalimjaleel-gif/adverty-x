@@ -27,6 +27,7 @@ import {
 import { 
   AGENCY_SERVICES, 
   CourseItem,
+  ACADEMY_COURSES,
   APP_SUBSCRIPTIONS,
   CASE_STUDIES, 
   FAQS 
@@ -35,12 +36,13 @@ import { getStoredCourses, fetchCoursesFromServer } from "@/lib/store";
 
 export default function HomePage() {
   const [openFaq, setOpenFaq] = useState<number | null>(0);
-  const [courses, setCourses] = useState<CourseItem[]>([]);
+  const [courses, setCourses] = useState<CourseItem[]>(ACADEMY_COURSES);
 
   useEffect(() => {
-    setCourses(getStoredCourses());
+    const initial = getStoredCourses();
+    if (initial && initial.length > 0) setCourses(initial);
     fetchCoursesFromServer().then(list => {
-      if (list) setCourses(list);
+      if (list && list.length > 0) setCourses(list);
     });
     const handleUpdate = () => setCourses(getStoredCourses());
     window.addEventListener("advertyx_courses_updated", handleUpdate);
