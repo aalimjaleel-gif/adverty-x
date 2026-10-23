@@ -341,7 +341,7 @@ export async function fetchSubscriptionsFromServer(): Promise<AppSubscriptionIte
       } catch (e) {}
     }
 
-    // Read user's local subscriptions so newly added/edited items are NEVER lost
+    // Read user's local subscriptions so newly added custom items are NEVER lost
     let localSubs: AppSubscriptionItem[] = [];
     if (typeof window !== "undefined") {
       try {
@@ -350,30 +350,17 @@ export async function fetchSubscriptionsFromServer(): Promise<AppSubscriptionIte
       } catch (e) {}
     }
 
-    const map = new Map<string, AppSubscriptionItem>();
+    const baseList = Array.isArray(serverSubs) && serverSubs.length > 0 ? serverSubs : APP_SUBSCRIPTIONS;
+    const serverIdSet = new Set(baseList.map(s => s.id));
+    const serverSlugSet = new Set(baseList.map(s => s.slug));
 
-    // 1. Put user's local subscriptions FIRST (so newly added items stay at the TOP!)
+    // Identify brand-new items created by admin locally that are not yet on the server
+    const newLocalOnlyItems: AppSubscriptionItem[] = [];
     if (Array.isArray(localSubs)) {
       localSubs.forEach(localItem => {
-        if (localItem && localItem.id) {
-          map.set(localItem.id, localItem);
-        }
-      });
-    }
-
-    // 2. Add or sync server items (if not already in local)
-    const baseList = Array.isArray(serverSubs) && serverSubs.length > 0 ? serverSubs : APP_SUBSCRIPTIONS;
-    baseList.forEach(s => {
-      if (s && s.id && !map.has(s.id)) {
-        map.set(s.id, s);
-      }
-    });
-
-    // 3. Sync any local-only items to the server in background
-    if (Array.isArray(localSubs) && Array.isArray(serverSubs)) {
-      const serverIds = new Set(serverSubs.map(s => s.id));
-      localSubs.forEach(localItem => {
-        if (localItem && localItem.id && !serverIds.has(localItem.id)) {
+        if (localItem && localItem.id && !serverIdSet.has(localItem.id) && !serverSlugSet.has(localItem.slug)) {
+          newLocalOnlyItems.push(localItem);
+          // Persist user's newly created local item to server immediately
           fetch("/api/subscriptions", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
@@ -383,7 +370,12 @@ export async function fetchSubscriptionsFromServer(): Promise<AppSubscriptionIte
       });
     }
 
-    const merged = Array.from(map.values());
+    // Merge: newly added local items first, followed by authoritative server items
+    const mergedMap = new Map<string, AppSubscriptionItem>();
+    newLocalOnlyItems.forEach(item => mergedMap.set(item.id, item));
+    baseList.forEach(item => mergedMap.set(item.id, item));
+
+    const merged = Array.from(mergedMap.values());
     inMemorySubscriptions = merged;
     if (typeof window !== "undefined") {
       localStorage.setItem(SUBSCRIPTIONS_STORAGE_KEY, JSON.stringify(merged));
