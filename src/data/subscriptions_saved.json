@@ -1,5 +1,15 @@
 [
   {
+    "id": "app-test-99",
+    "pricePKR": 500,
+    "typeBadge": "1 Month",
+    "category": "ENTERTAINMENT",
+    "name": "Test Item 123",
+    "slug": "test-item-123",
+    "inStock": true,
+    "warrantyBadge": "30-day warranty"
+  },
+  {
     "id": "app-1",
     "name": "Capcut Pro (Android/iPhone)",
     "slug": "capcut-pro-mobile",
