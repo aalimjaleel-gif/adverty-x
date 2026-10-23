@@ -368,14 +368,16 @@ export default function UnifiedMasterPanel() {
   const handleSyncAllSubscriptionsToCloud = async () => {
     setIsSyncingSubs(true);
     try {
-      for (const item of products) {
-        await fetch("/api/subscriptions", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(item),
-        });
+      const res = await fetch("/api/subscriptions", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(products),
+      });
+      if (res.ok) {
+        showToast("✅ Successfully synced all subscriptions to mobile & live store!");
+      } else {
+        showToast("Subscriptions saved locally!");
       }
-      showToast("✅ Successfully synced all subscriptions to mobile & live store!");
     } catch (e) {
       showToast("Subscriptions saved locally!");
     } finally {

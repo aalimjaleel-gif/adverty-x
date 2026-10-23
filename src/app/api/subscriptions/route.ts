@@ -138,10 +138,21 @@ export async function GET() {
   });
 }
 
-// POST /api/subscriptions (Create or Update Subscription)
+// POST /api/subscriptions (Create, Update, or Bulk Sync Subscriptions)
 export async function POST(req: Request) {
   try {
-    const item: AppSubscriptionItem = await req.json();
+    const body = await req.json();
+
+    // 1. Bulk update: Save the entire updated subscriptions list in 1 single clean operation
+    if (Array.isArray(body)) {
+      if (body.length === 0) {
+        return NextResponse.json({ error: "Empty subscriptions list" }, { status: 400 });
+      }
+      persistSubscriptionsData(body).catch((e) => console.error("Bulk persist error:", e));
+      return NextResponse.json({ success: true, count: body.length });
+    }
+
+    const item: AppSubscriptionItem = body;
     if (!item || !item.name) {
       return NextResponse.json({ error: "Invalid subscription data" }, { status: 400 });
     }
