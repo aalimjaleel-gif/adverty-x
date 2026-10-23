@@ -14,7 +14,7 @@ import {
 } from "lucide-react";
 import { AppSubscriptionItem } from "@/data/mockData";
 
-export function AppLogoIcon({ type }: { type: AppSubscriptionItem["iconType"] }) {
+export function AppLogoIcon({ type, name }: { type?: AppSubscriptionItem["iconType"]; name?: string }) {
   if (type === "capcut") {
     return (
       <div className="w-16 h-16 rounded-2xl bg-white border border-slate-200 shadow-xs flex items-center justify-center p-2.5">
@@ -96,9 +96,12 @@ export function AppLogoIcon({ type }: { type: AppSubscriptionItem["iconType"] })
     );
   }
 
+  // Generate stylish dynamic monogram from app name if available
+  const initial = (name || "★").trim().slice(0, 2).toUpperCase();
+
   return (
-    <div className="w-16 h-16 rounded-2xl bg-gradient-to-tr from-brand-600 to-indigo-600 text-white font-black text-xl flex items-center justify-center shadow-xs">
-      ★
+    <div className="w-16 h-16 rounded-2xl bg-gradient-to-tr from-brand-600 via-indigo-600 to-violet-600 text-white font-black text-xl flex items-center justify-center shadow-sm tracking-tight border border-white/20">
+      {initial}
     </div>
   );
 }
@@ -114,12 +117,33 @@ export default function AppCard({
 }) {
   const [showInfo, setShowInfo] = useState(false);
 
+  const pricePKR = Number(item.pricePKR) || 0;
+  const priceUSD = item.priceUSD ?? (pricePKR ? Number((pricePKR / 278).toFixed(2)) : 0);
+  const warranty = item.warrantyBadge || "28-day replacement warranty";
+  const fulfillment = item.fulfillmentType || "Instant Activation";
+  const description = item.description || `${item.name} subscription with ${warranty} and instant delivery.`;
+  const inStock = item.inStock !== false;
+
+  const handleCardClick = () => {
+    if (inStock) {
+      onOrder(item);
+    }
+  };
+
   return (
-    <div className="bg-white rounded-3xl border border-slate-200/90 p-6 flex flex-col justify-between hover:shadow-card transition-all duration-200 relative group">
-      
+    <div 
+      onClick={handleCardClick}
+      className={`bg-white rounded-3xl border border-slate-200/90 p-6 flex flex-col justify-between hover:shadow-card hover:border-brand-300 transition-all duration-200 relative group ${
+        inStock ? "cursor-pointer" : ""
+      }`}
+    >
       {/* Top Right Info (i) Button */}
       <button
-        onClick={() => setShowInfo(!showInfo)}
+        type="button"
+        onClick={(e) => {
+          e.stopPropagation();
+          setShowInfo(!showInfo);
+        }}
         className="absolute top-4 right-4 w-7 h-7 rounded-full bg-brand-50 hover:bg-brand-100 text-brand-600 flex items-center justify-center transition-colors z-10"
         title="View product details & fulfillment terms"
       >
@@ -128,30 +152,44 @@ export default function AppCard({
 
       {/* Info Overlay Modal if clicked */}
       {showInfo && (
-        <div className="absolute inset-0 bg-white/98 rounded-3xl p-5 z-20 flex flex-col justify-between animate-in fade-in duration-150 border border-brand-200 shadow-lg">
+        <div 
+          onClick={(e) => e.stopPropagation()}
+          className="absolute inset-0 bg-white/98 rounded-3xl p-5 z-20 flex flex-col justify-between animate-in fade-in duration-150 border border-brand-200 shadow-lg"
+        >
           <div>
             <div className="flex justify-between items-center pb-2 border-b border-slate-100 mb-3">
               <span className="font-bold text-xs text-slate-900">Subscription Terms</span>
-              <button onClick={() => setShowInfo(false)} className="text-slate-400 hover:text-slate-600">
+              <button 
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setShowInfo(false);
+                }} 
+                className="text-slate-400 hover:text-slate-600"
+              >
                 <X className="w-4 h-4" />
               </button>
             </div>
             <p className="text-xs text-slate-600 leading-relaxed mb-3">
-              {item.description}
+              {description}
             </p>
             <div className="space-y-1.5 text-[11px] text-slate-700">
               <div className="flex items-center gap-1.5 text-emerald-600 font-semibold">
                 <ShieldCheck className="w-3.5 h-3.5" />
-                <span>{item.warrantyBadge.toLowerCase().includes("warranty") ? item.warrantyBadge : `${item.warrantyBadge} replacement warranty`}</span>
+                <span>{warranty.toLowerCase().includes("warranty") ? warranty : `${warranty} replacement warranty`}</span>
               </div>
               <div className="flex items-center gap-1.5 text-brand-600 font-semibold">
                 <Lock className="w-3.5 h-3.5" />
-                <span>Fulfillment: {item.fulfillmentType}</span>
+                <span>Fulfillment: {fulfillment}</span>
               </div>
             </div>
           </div>
           <button
-            onClick={() => setShowInfo(false)}
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              setShowInfo(false);
+            }}
             className="w-full py-2 rounded-xl bg-slate-100 text-slate-700 text-xs font-bold hover:bg-slate-200"
           >
             Close Details
@@ -162,15 +200,15 @@ export default function AppCard({
       {/* Top Section: App Logo + Name + Pill */}
       <div>
         <div className="flex justify-center mb-4">
-          <AppLogoIcon type={item.iconType} />
+          <AppLogoIcon type={item.iconType} name={item.name} />
         </div>
 
         <div className="text-center space-y-1.5 mb-3">
-          <h3 className="font-bold text-slate-900 text-base leading-snug">
+          <h3 className="font-bold text-slate-900 text-base leading-snug group-hover:text-brand-600 transition-colors">
             {item.name}
           </h3>
           <span className="inline-block text-[11px] font-semibold text-slate-500 bg-slate-100 px-3 py-1 rounded-full">
-            {item.typeBadge}
+            {item.typeBadge || "1 Month • Private"}
           </span>
         </div>
 
@@ -178,7 +216,7 @@ export default function AppCard({
         <div className="flex justify-center mb-3">
           <span className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-600">
             <ShieldCheck className="w-3.5 h-3.5" />
-            <span>{item.warrantyBadge}</span>
+            <span>{warranty}</span>
           </span>
         </div>
 
@@ -189,15 +227,15 @@ export default function AppCard({
               <Star key={i} className="w-3 h-3 fill-amber-400 text-amber-400" />
             ))}
           </div>
-          <span className="text-slate-800 ml-1">{item.rating}</span>
-          <span className="text-slate-400 font-normal">({item.reviewsCount})</span>
+          <span className="text-slate-800 ml-1">{item.rating ?? 4.8}</span>
+          <span className="text-slate-400 font-normal">({item.reviewsCount ?? 120})</span>
         </div>
       </div>
 
       {/* Bottom Section: Price & Order Action */}
       <div className="space-y-3 pt-2 text-center">
         <div className="text-2xl font-black tracking-tight min-h-[36px] flex items-center justify-center">
-          {item.pricePKR === 0 ? (
+          {pricePKR === 0 ? (
             <div className="flex items-center justify-center gap-2">
               <span className="px-3 py-1 rounded-full text-xs font-black bg-emerald-100 text-emerald-800 tracking-wider uppercase border border-emerald-300 shadow-xs">
                 🎁 100% FREE
@@ -206,25 +244,31 @@ export default function AppCard({
             </div>
           ) : (
             <span className="text-slate-900">
-              {currency === "PKR" ? `Rs ${item.pricePKR.toLocaleString()}` : `$${item.priceUSD.toFixed(2)}`}
+              {currency === "PKR" ? `Rs ${pricePKR.toLocaleString()}` : `$${priceUSD.toFixed(2)}`}
             </span>
           )}
         </div>
 
-        {item.inStock ? (
+        {inStock ? (
           <button
-            onClick={() => onOrder(item)}
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              onOrder(item);
+            }}
             className={`w-full py-3 rounded-2xl text-xs font-bold uppercase tracking-wider transition-all shadow-sm cursor-pointer ${
-              item.pricePKR === 0
+              pricePKR === 0
                 ? "bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white shadow-emerald-500/30 ring-2 ring-emerald-400"
-                : "bg-brand-600 hover:bg-brand-700 active:bg-brand-800 text-white shadow-brand-500/25"
+                : "bg-brand-600 hover:bg-brand-700 active:bg-brand-800 text-white shadow-brand-500/25 group-hover:bg-brand-700"
             }`}
           >
-            {item.pricePKR === 0 ? "🎁 Claim Free Access" : "Order Now"}
+            {pricePKR === 0 ? "🎁 Claim Free Access" : "Order Now"}
           </button>
         ) : (
           <button
+            type="button"
             disabled
+            onClick={(e) => e.stopPropagation()}
             className="w-full py-3 rounded-2xl bg-brand-200/70 text-brand-700 text-xs font-bold uppercase tracking-wider cursor-not-allowed opacity-90"
           >
             Out of Stock

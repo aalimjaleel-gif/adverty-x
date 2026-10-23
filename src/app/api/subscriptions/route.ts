@@ -147,20 +147,36 @@ export async function POST(req: Request) {
     }
 
     const current = await getSubscriptionsData();
-    const existingIndex = current.findIndex((s) => s.id === item.id || s.slug === item.slug);
+    const existingIndex = current.findIndex((s) => s.id === item.id);
 
     let updated: AppSubscriptionItem[];
     if (existingIndex >= 0) {
       updated = [...current];
-      updated[existingIndex] = { ...item, id: current[existingIndex].id };
+      updated[existingIndex] = { ...current[existingIndex], ...item };
     } else {
-      updated = [item, ...current];
+      let finalSlug = item.slug || item.name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
+      if (current.some(s => s.slug === finalSlug && s.id !== item.id)) {
+        finalSlug = `${finalSlug}-${Date.now().toString().slice(-4)}`;
+      }
+      const completeItem: AppSubscriptionItem = {
+        ...item,
+        id: item.id || `app-${Date.now()}`,
+        slug: finalSlug,
+        rating: item.rating ?? 4.8,
+        reviewsCount: item.reviewsCount ?? Math.floor(100 + Math.random() * 500),
+        pricePKR: Number(item.pricePKR) || 0,
+        priceUSD: item.priceUSD ?? (item.pricePKR ? Number((Number(item.pricePKR) / 278).toFixed(2)) : 0),
+        warrantyBadge: item.warrantyBadge || "28-day warranty",
+        typeBadge: item.typeBadge || "1 Month • Private",
+        inStock: item.inStock !== false,
+      };
+      updated = [completeItem, ...current];
     }
 
     // Persist to server & GitHub in background
     persistSubscriptionsData(updated).catch((e) => console.error("Persist error:", e));
 
-    return NextResponse.json({ success: true, item, total: updated.length });
+    return NextResponse.json({ success: true, item: updated[0], total: updated.length });
   } catch (err) {
     console.error("Failed to save subscription:", err);
     return NextResponse.json({ error: "Failed to save subscription" }, { status: 500 });

@@ -352,24 +352,33 @@ export async function fetchSubscriptionsFromServer(): Promise<AppSubscriptionIte
 
     const map = new Map<string, AppSubscriptionItem>();
 
-    // 1. Populate base from server or default mockData
-    const baseList = Array.isArray(serverSubs) && serverSubs.length > 0 ? serverSubs : APP_SUBSCRIPTIONS;
-    baseList.forEach(s => map.set(s.id, s));
-
-    // 2. User's local subscriptions take priority and are preserved
+    // 1. Put user's local subscriptions FIRST (so newly added items stay at the TOP!)
     if (Array.isArray(localSubs)) {
       localSubs.forEach(localItem => {
-        if (!map.has(localItem.id)) {
+        if (localItem && localItem.id) {
           map.set(localItem.id, localItem);
-          // Sync new local item to server
+        }
+      });
+    }
+
+    // 2. Add or sync server items (if not already in local)
+    const baseList = Array.isArray(serverSubs) && serverSubs.length > 0 ? serverSubs : APP_SUBSCRIPTIONS;
+    baseList.forEach(s => {
+      if (s && s.id && !map.has(s.id)) {
+        map.set(s.id, s);
+      }
+    });
+
+    // 3. Sync any local-only items to the server in background
+    if (Array.isArray(localSubs) && Array.isArray(serverSubs)) {
+      const serverIds = new Set(serverSubs.map(s => s.id));
+      localSubs.forEach(localItem => {
+        if (localItem && localItem.id && !serverIds.has(localItem.id)) {
           fetch("/api/subscriptions", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify(localItem)
           }).catch(() => {});
-        } else {
-          // If local item has updated details (e.g. customized price/warranty), keep local
-          map.set(localItem.id, localItem);
         }
       });
     }
@@ -382,7 +391,8 @@ export async function fetchSubscriptionsFromServer(): Promise<AppSubscriptionIte
     }
     return merged;
   } catch (err) {
-    return inMemorySubscriptions.length > 0 ? inMemorySubscriptions : APP_SUBSCRIPTIONS;
+    const fallback = getStoredSubscriptions();
+    return fallback.length > 0 ? fallback : APP_SUBSCRIPTIONS;
   }
 }
 
@@ -405,21 +415,19 @@ export function getStoredSubscriptions(): AppSubscriptionItem[] {
       return APP_SUBSCRIPTIONS;
     }
     const parsed: AppSubscriptionItem[] = JSON.parse(raw);
-    
-    // Deduplicate by slug and id
-    const dedupedMap = new Map<string, AppSubscriptionItem>();
-    const seenSlugs = new Set<string>();
-    parsed.forEach(item => {
-      const key = item.slug || item.id;
-      if (!seenSlugs.has(key)) {
-        seenSlugs.add(key);
-        dedupedMap.set(item.id, item);
-      }
-    });
-
-    const cleaned = Array.from(dedupedMap.values());
-    inMemorySubscriptions = cleaned;
-    return cleaned;
+    if (Array.isArray(parsed) && parsed.length > 0) {
+      // Deduplicate by ID
+      const dedupedMap = new Map<string, AppSubscriptionItem>();
+      parsed.forEach(item => {
+        if (item && item.id) {
+          dedupedMap.set(item.id, item);
+        }
+      });
+      const cleaned = Array.from(dedupedMap.values());
+      inMemorySubscriptions = cleaned;
+      return cleaned;
+    }
+    return inMemorySubscriptions.length > 0 ? inMemorySubscriptions : APP_SUBSCRIPTIONS;
   } catch (err) {
     return inMemorySubscriptions.length > 0 ? inMemorySubscriptions : APP_SUBSCRIPTIONS;
   }
@@ -427,11 +435,11 @@ export function getStoredSubscriptions(): AppSubscriptionItem[] {
 
 export function addSubscriptionItem(newItem: AppSubscriptionItem): AppSubscriptionItem[] {
   const current = getStoredSubscriptions();
-  const existsIndex = current.findIndex(item => item.id === newItem.id || item.slug === newItem.slug);
+  const existsIndex = current.findIndex(item => item.id === newItem.id);
   let updated: AppSubscriptionItem[];
   if (existsIndex >= 0) {
     updated = [...current];
-    updated[existsIndex] = { ...newItem, id: current[existsIndex].id };
+    updated[existsIndex] = { ...current[existsIndex], ...newItem };
   } else {
     updated = [newItem, ...current];
   }

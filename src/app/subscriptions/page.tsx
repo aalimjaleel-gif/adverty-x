@@ -62,7 +62,11 @@ export default function SubscriptionsPage() {
       if (updated && updated.length > 0) setProducts(updated);
     };
     window.addEventListener("advertyx_subscriptions_updated", handleUpdate);
-    return () => window.removeEventListener("advertyx_subscriptions_updated", handleUpdate);
+    window.addEventListener("storage", handleUpdate);
+    return () => {
+      window.removeEventListener("advertyx_subscriptions_updated", handleUpdate);
+      window.removeEventListener("storage", handleUpdate);
+    };
   }, []);
 
   const defaultCategories = ["ALL PRODUCTS", "DESIGN & EDIT", "ENTERTAINMENT", "VPN", "AI & PRODUCTIVITY", "STREAMING"];
@@ -170,21 +174,39 @@ export default function SubscriptionsPage() {
         </div>
 
         {/* 4-Column Product Cards Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-20">
-          {filteredItems.map((item) => (
-            <AppCard
-              key={item.id}
-              item={item}
-              currency={currency}
-              onOrder={(selected) => {
-                setOrderingItem(selected);
-                setOrderComplete(false);
-                setCustomerContact("");
-                setTid("");
-              }}
-            />
-          ))}
-        </div>
+        {filteredItems.length === 0 ? (
+          <div className="bg-white rounded-3xl border border-slate-200/90 p-12 text-center max-w-md mx-auto mb-20 shadow-xs">
+            <div className="w-14 h-14 rounded-2xl bg-brand-50 text-brand-600 flex items-center justify-center mx-auto mb-4 font-bold text-xl">
+              ★
+            </div>
+            <h3 className="text-base font-bold text-slate-900 mb-1">No Subscriptions Found</h3>
+            <p className="text-xs text-slate-500 mb-4">
+              There are no products listed under &quot;{selectedCategory}&quot;.
+            </p>
+            <button
+              onClick={() => setSelectedCategory("ALL PRODUCTS")}
+              className="px-5 py-2.5 rounded-xl bg-brand-600 hover:bg-brand-700 text-white text-xs font-bold transition-all shadow-sm"
+            >
+              View All Subscriptions
+            </button>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-20">
+            {filteredItems.map((item) => (
+              <AppCard
+                key={item.id}
+                item={item}
+                currency={currency}
+                onOrder={(selected) => {
+                  setOrderingItem(selected);
+                  setOrderComplete(false);
+                  setCustomerContact("");
+                  setTid("");
+                }}
+              />
+            ))}
+          </div>
+        )}
 
         {/* Customer Trust Footer Banner */}
         <div className="p-8 rounded-3xl bg-white border border-slate-200/90 max-w-4xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-6 text-center sm:text-left shadow-xs">
