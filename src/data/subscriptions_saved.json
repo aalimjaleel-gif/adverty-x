@@ -1,19 +1,5 @@
 [
   {
-    "pricePKR": 400,
-    "slug": "disney-plus-premium",
-    "id": "app-disney-test",
-    "description": "Disney Plus 4K UHD streaming with all movies and series.",
-    "category": "ENTERTAINMENT",
-    "warrantyBadge": "30-day warranty",
-    "inStock": true,
-    "name": "Disney+ Premium",
-    "typeBadge": "1 Month . 4K UHD",
-    "rating": 4.8,
-    "reviewsCount": 257,
-    "priceUSD": 1.44
-  },
-  {
     "id": "app-1",
     "name": "Capcut Pro (Android/iPhone)",
     "slug": "capcut-pro-mobile",
