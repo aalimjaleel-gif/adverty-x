@@ -122,8 +122,11 @@ export default function ServicesPage() {
                 <div className="pt-6 border-t border-slate-100 space-y-3">
                   <div className="flex items-center justify-between">
                     <div>
-                      <span className="text-[10px] text-slate-400 block font-medium">Estimated Pricing</span>
-                      <span className="text-xl font-extrabold text-slate-900">${service.startingPrice}</span>
+                      <span className="text-[10px] text-slate-400 block font-bold uppercase tracking-wider">Status</span>
+                      <span className="text-xs font-black text-amber-700 uppercase tracking-wide bg-amber-50 px-2.5 py-1 rounded-lg border border-amber-200/80 inline-flex items-center gap-1 mt-0.5">
+                        <Clock className="w-3 h-3 text-amber-600" />
+                        <span>Pre-Booking Open</span>
+                      </span>
                     </div>
 
                     <a

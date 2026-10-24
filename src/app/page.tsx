@@ -272,14 +272,20 @@ export default function HomePage() {
           
           <div className="flex flex-col md:flex-row md:items-end justify-between mb-12">
             <div>
-              <span className="text-xs font-extrabold uppercase tracking-widest text-brand-600 mb-2 block">
-                WHAT WE DO
-              </span>
+              <div className="flex items-center gap-2 mb-2">
+                <span className="text-xs font-extrabold uppercase tracking-widest text-brand-600 block">
+                  WHAT WE DO
+                </span>
+                <span className="inline-flex items-center gap-1 text-[10px] font-black uppercase tracking-wider px-2.5 py-0.5 rounded-full bg-amber-100 text-amber-800 border border-amber-200">
+                  <Clock className="w-3 h-3 text-amber-600" />
+                  <span>Coming Soon • Pre-Booking Open</span>
+                </span>
+              </div>
               <h2 className="text-3xl sm:text-4xl font-extrabold text-slate-900 tracking-tight">
                 Our Agency Services
               </h2>
               <p className="text-slate-600 text-sm sm:text-base mt-2 max-w-xl">
-                We offer a complete range of digital services to help your business grow and succeed online.
+                We offer a complete range of digital services to help your business grow and succeed online. Launching soon with full delivery pipelines.
               </p>
             </div>
 
@@ -323,15 +329,17 @@ export default function HomePage() {
                       <IconComponent className="w-6 h-6" />
                     </div>
 
-                    {service.isAddon ? (
-                      <span className="text-[11px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-full bg-brand-100 text-brand-700">
-                        Paid Add-on
+                    <div className="flex items-center gap-1.5 flex-wrap justify-end">
+                      <span className="text-[10px] font-black uppercase tracking-wider px-2.5 py-1 rounded-full bg-amber-100 text-amber-800 border border-amber-200 flex items-center gap-1 shadow-2xs">
+                        <Clock className="w-3 h-3 text-amber-600" />
+                        <span>Coming Soon</span>
                       </span>
-                    ) : service.popular ? (
-                      <span className="text-[11px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-full bg-indigo-100 text-indigo-700">
-                        Popular
-                      </span>
-                    ) : null}
+                      {service.isAddon ? (
+                        <span className="text-[11px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-full bg-brand-100 text-brand-700">
+                          Paid Add-on
+                        </span>
+                      ) : null}
+                    </div>
                   </div>
 
                   {/* Title & Desc */}
@@ -364,15 +372,18 @@ export default function HomePage() {
                   {/* Price & Action */}
                   <div className="pt-4 border-t border-slate-100 flex items-center justify-between">
                     <div>
-                      <span className="text-xs text-slate-400 block font-medium">Starting from</span>
-                      <span className="text-xl font-extrabold text-slate-900">${service.startingPrice}</span>
+                      <span className="text-[10px] text-slate-400 block font-bold uppercase tracking-wider">Availability</span>
+                      <span className="text-xs font-black text-amber-700 uppercase tracking-wide bg-amber-50 px-2.5 py-1 rounded-lg border border-amber-200/80 inline-flex items-center gap-1 mt-0.5">
+                        <Clock className="w-3 h-3 text-amber-600" />
+                        <span>Pre-Booking</span>
+                      </span>
                     </div>
 
                     <a
                       href={`/services/${service.slug}`}
-                      className="inline-flex items-center gap-1 text-sm font-semibold text-brand-600 hover:text-brand-700 group"
+                      className="inline-flex items-center gap-1.5 text-xs font-bold text-slate-700 hover:text-brand-600 bg-slate-100 hover:bg-brand-50 px-3.5 py-2 rounded-xl transition-all group"
                     >
-                      <span>Get Started</span>
+                      <span>Explore Service</span>
                       <ArrowRight className="w-3.5 h-3.5 transition-transform group-hover:translate-x-1" />
                     </a>
                   </div>
