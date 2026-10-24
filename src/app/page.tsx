@@ -430,22 +430,40 @@ export default function HomePage() {
               {courses.slice(0, 3).map((course) => (
                 <div
                   key={course.id}
-                  className="bg-white rounded-2xl border border-slate-200/80 overflow-hidden hover:shadow-card hover:-translate-y-1 transition-all duration-200 flex flex-col justify-between"
+                  className="bg-white rounded-2xl border border-slate-200/80 overflow-hidden hover:shadow-card hover:-translate-y-1 transition-all duration-200 flex flex-col justify-between group"
                 >
-                  {/* Course Banner Mock */}
-                  <div className="h-44 bg-gradient-to-tr from-slate-900 via-indigo-950 to-slate-900 p-5 flex flex-col justify-between text-white relative">
-                    <div className="flex justify-between items-center">
-                      <span className="text-[11px] font-bold px-2 py-0.5 rounded bg-white/20 backdrop-blur-sm">
-                        {course.category}
-                      </span>
-                      <span className="text-xs text-slate-300">{course.duration}</span>
-                    </div>
-                    
-                    <div>
-                      <span className="text-xs text-brand-300 font-semibold uppercase tracking-wider block">
-                        Lifetime Access
-                      </span>
-                      <h4 className="text-lg font-bold text-white line-clamp-1">{course.title}</h4>
+                  {/* Course Banner / Thumbnail */}
+                  <div className="h-48 relative overflow-hidden bg-slate-900">
+                    {course.thumbnailUrl ? (
+                      <img 
+                        src={course.thumbnailUrl} 
+                        alt={course.title}
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                      />
+                    ) : (
+                      <div className="w-full h-full bg-gradient-to-tr from-slate-950 via-indigo-950 to-slate-900"></div>
+                    )}
+
+                    {/* Gradient overlay for clear text */}
+                    <div className="absolute inset-0 bg-gradient-to-t from-slate-950/95 via-slate-950/40 to-black/30 p-4 flex flex-col justify-between text-white">
+                      <div className="flex justify-between items-center">
+                        <span className="text-[11px] font-bold px-2.5 py-1 rounded-lg bg-black/60 text-white backdrop-blur-md border border-white/10">
+                          {course.category}
+                        </span>
+                        <span className="text-xs text-slate-200 font-medium flex items-center gap-1 bg-black/50 px-2 py-0.5 rounded backdrop-blur-sm">
+                          <Clock className="w-3 h-3 text-slate-300" />
+                          <span>{course.duration}</span>
+                        </span>
+                      </div>
+                      
+                      <div>
+                        <span className="text-[10px] text-brand-300 font-bold uppercase tracking-wider block">
+                          Lifetime Access
+                        </span>
+                        <h4 className="text-base sm:text-lg font-bold text-white line-clamp-1 drop-shadow-sm mt-0.5">
+                          {course.title}
+                        </h4>
+                      </div>
                     </div>
                   </div>
 
