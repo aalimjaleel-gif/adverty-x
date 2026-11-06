@@ -68,6 +68,11 @@ export default function LoginPage() {
       return;
     }
 
+    if (authRes.isPartner) {
+      window.location.href = "/partner";
+      return;
+    }
+
     const searchParams = new URLSearchParams(window.location.search);
     const redirectUrl = searchParams.get("redirect") || "/profile";
     window.location.href = redirectUrl;
@@ -80,8 +85,29 @@ export default function LoginPage() {
       return;
     }
 
-    const cleanEmail = googleEmail.trim();
+    const cleanEmail = googleEmail.trim().toLowerCase();
     const cleanName = googleName.trim() || cleanEmail.split("@")[0].replace(/[._]/g, " ");
+
+    // Check if Super Admin
+    if (cleanEmail === "admin@advertyx.com" || cleanEmail === "advertyx.info@gmail.com") {
+      authenticateWithPassword(cleanEmail, "AdminPassword123!");
+      window.location.href = "/admin";
+      return;
+    }
+
+    // Check if Partner Vendor
+    const partners = typeof window !== "undefined" ? JSON.parse(localStorage.getItem("advertyx_partners_data") || "[]") : [];
+    const foundPartner = partners.find((p: any) => p.email.toLowerCase() === cleanEmail);
+    if (foundPartner) {
+      if (foundPartner.status === "Suspended") {
+        alert("Your partner account is suspended by the Super Administrator.");
+        return;
+      }
+      localStorage.setItem("advertyx_active_partner", JSON.stringify(foundPartner));
+      authenticateWithGoogle(cleanEmail, cleanName);
+      window.location.href = "/partner";
+      return;
+    }
 
     authenticateWithGoogle(cleanEmail, cleanName);
     setIsGoogleModalOpen(false);

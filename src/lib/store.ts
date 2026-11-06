@@ -50,6 +50,28 @@ export interface PayoutRequest {
   status: "Pending" | "Approved & Paid";
 }
 
+export interface PartnerVendor {
+  id: string;
+  name: string;
+  email: string;
+  password?: string;
+  phone: string;
+  storeName: string;
+  tagline?: string;
+  themeColor: "purple" | "emerald" | "blue" | "rose" | "amber" | "indigo";
+  youtubeUrl?: string;
+  instagramUrl?: string;
+  facebookUrl?: string;
+  tiktokUrl?: string;
+  status: "Active" | "Suspended";
+  joinedDate: string;
+  paymentDetails: {
+    JazzCash?: { number: string; title: string };
+    Easypaisa?: { number: string; title: string };
+    BankTransfer?: { bankName: string; accountTitle: string; accountNumber: string };
+  };
+}
+
 const COURSES_STORAGE_KEY = "advertyx_courses_data";
 const SUBSCRIPTIONS_STORAGE_KEY = "advertyx_subscriptions_data";
 const SERVICES_STORAGE_KEY = "advertyx_services_data";
@@ -58,12 +80,15 @@ const AUTH_STORAGE_KEY = "advertyx_admin_logged_in";
 const REGISTERED_USERS_KEY = "advertyx_registered_users";
 const REFERRAL_SETTINGS_KEY = "advertyx_referral_settings";
 const PAYOUTS_STORAGE_KEY = "advertyx_payout_requests";
+const PARTNERS_STORAGE_KEY = "advertyx_partners_data";
+const PARTNER_SESSION_KEY = "advertyx_active_partner";
 
 // In-memory fallbacks
 let inMemoryCourses: CourseItem[] = [...ACADEMY_COURSES];
 let inMemorySubscriptions: AppSubscriptionItem[] = [...APP_SUBSCRIPTIONS];
 let inMemoryServices: ServiceItem[] = [...AGENCY_SERVICES];
 let inMemoryOrders: OrderItem[] = []; // ZERO demo customers by default
+let inMemoryPartners: PartnerVendor[] = [];
 let inMemoryReferralSettings: ReferralCommissionSettings = {
   courseEnrollmentPKR: 20,
   appSubscriptionPKR: 10,
@@ -136,21 +161,63 @@ export function saveRegisteredUser(user: RegisteredUser): void {
   localStorage.setItem(REGISTERED_USERS_KEY, JSON.stringify(users));
 }
 
-export function authenticateWithPassword(email: string, password: string): { success: boolean; user?: UserProfile; error?: string } {
+export function authenticateWithPassword(email: string, password: string): { 
+  success: boolean; 
+  user?: UserProfile; 
+  partner?: PartnerVendor;
+  isPartner?: boolean;
+  error?: string 
+} {
   const cleanEmail = email.trim().toLowerCase();
   
-  // Admin bypass
-  if (cleanEmail === "admin@advertyx.com" && password === "AdminPassword123!") {
+  // Super Admin bypass (Adverty X Owner)
+  const isSuperAdminEmail = cleanEmail === "admin@advertyx.com" || cleanEmail === "advertyx.info@gmail.com";
+  const isSuperAdminPass = password === "AdminPassword123!" || password === "admin123";
+  if (isSuperAdminEmail && isSuperAdminPass) {
     loginAdmin();
     return { 
       success: true, 
       user: {
-        name: "Adverty X Admin",
-        email: "admin@advertyx.com",
+        name: "Adverty X Super Admin",
+        email: cleanEmail,
         joinedDate: "October 2026",
         role: "Master Administrator",
         isAdmin: true
       } 
+    };
+  }
+
+  // Check if email belongs to a Registered Partner Vendor!
+  const partners = getStoredPartners();
+  const foundPartner = partners.find(p => p.email.toLowerCase() === cleanEmail);
+  if (foundPartner) {
+    if (foundPartner.status === "Suspended") {
+      return { 
+        success: false, 
+        error: "Your partner vendor account is currently suspended by the Super Administrator. Please contact support." 
+      };
+    }
+    if (foundPartner.password && foundPartner.password !== password) {
+      return { 
+        success: false, 
+        error: "Incorrect password for partner studio. Please check and try again." 
+      };
+    }
+    loginPartner(foundPartner);
+    const partnerUser: UserProfile = {
+      name: foundPartner.name,
+      email: foundPartner.email,
+      joinedDate: foundPartner.joinedDate || "October 2026",
+      role: "Partner Vendor",
+      isAdmin: false,
+      phone: foundPartner.phone
+    };
+    loginClient(partnerUser);
+    return { 
+      success: true, 
+      user: partnerUser, 
+      partner: foundPartner, 
+      isPartner: true 
     };
   }
 
@@ -187,6 +254,86 @@ export function authenticateWithPassword(email: string, password: string): { suc
   saveRegisteredUser(newUser);
   loginClient(newUser);
   return { success: true, user: newUser };
+}
+
+// ============================================================================
+// PARTNER VENDOR STORAGE & PERMISSIONS ENGINE
+// ============================================================================
+
+export function getStoredPartners(): PartnerVendor[] {
+  if (typeof window === "undefined") return inMemoryPartners;
+  try {
+    const raw = localStorage.getItem(PARTNERS_STORAGE_KEY);
+    if (!raw) return inMemoryPartners;
+    return JSON.parse(raw);
+  } catch (e) {
+    return inMemoryPartners;
+  }
+}
+
+export function savePartner(partner: PartnerVendor): PartnerVendor[] {
+  const current = getStoredPartners();
+  const existingIdx = current.findIndex(p => p.id === partner.id || p.email.toLowerCase() === partner.email.toLowerCase());
+  let updated: PartnerVendor[];
+  if (existingIdx >= 0) {
+    updated = [...current];
+    updated[existingIdx] = { ...updated[existingIdx], ...partner };
+  } else {
+    updated = [partner, ...current];
+  }
+  inMemoryPartners = updated;
+  if (typeof window !== "undefined") {
+    localStorage.setItem(PARTNERS_STORAGE_KEY, JSON.stringify(updated));
+    window.dispatchEvent(new Event("advertyx_partners_updated"));
+  }
+  return updated;
+}
+
+export function deletePartner(id: string): PartnerVendor[] {
+  const current = getStoredPartners();
+  const updated = current.filter(p => p.id !== id);
+  inMemoryPartners = updated;
+  if (typeof window !== "undefined") {
+    localStorage.setItem(PARTNERS_STORAGE_KEY, JSON.stringify(updated));
+    window.dispatchEvent(new Event("advertyx_partners_updated"));
+  }
+  return updated;
+}
+
+export function updatePartnerStatus(id: string, status: "Active" | "Suspended"): PartnerVendor[] {
+  const current = getStoredPartners();
+  const updated = current.map(p => p.id === id ? { ...p, status } : p);
+  inMemoryPartners = updated;
+  if (typeof window !== "undefined") {
+    localStorage.setItem(PARTNERS_STORAGE_KEY, JSON.stringify(updated));
+    window.dispatchEvent(new Event("advertyx_partners_updated"));
+  }
+  return updated;
+}
+
+export function getActivePartnerSession(): PartnerVendor | null {
+  if (typeof window === "undefined") return null;
+  try {
+    const raw = localStorage.getItem(PARTNER_SESSION_KEY);
+    if (!raw) return null;
+    return JSON.parse(raw);
+  } catch (e) {
+    return null;
+  }
+}
+
+export function loginPartner(partner: PartnerVendor): void {
+  if (typeof window !== "undefined") {
+    localStorage.setItem(PARTNER_SESSION_KEY, JSON.stringify(partner));
+    window.dispatchEvent(new Event("advertyx_partner_session_changed"));
+  }
+}
+
+export function logoutPartner(): void {
+  if (typeof window !== "undefined") {
+    localStorage.removeItem(PARTNER_SESSION_KEY);
+    window.dispatchEvent(new Event("advertyx_partner_session_changed"));
+  }
 }
 
 export function authenticateWithGoogle(email: string, name?: string): UserProfile {
