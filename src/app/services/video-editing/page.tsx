@@ -55,7 +55,7 @@ export default function VideoEditingPage() {
   return (
     <div className="bg-white min-h-screen py-16">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        
+
         {/* Header */}
         <div className="max-w-3xl mb-8">
           <div className="flex items-center gap-2 text-xs font-semibold text-brand-600 mb-3">
@@ -89,11 +89,10 @@ export default function VideoEditingPage() {
           {addonTiers.map((tier, idx) => (
             <div
               key={idx}
-              className={`rounded-2xl p-7 border flex flex-col justify-between transition-all ${
-                tier.popular
+              className={`rounded-2xl p-7 border flex flex-col justify-between transition-all ${tier.popular
                   ? "border-brand-600 ring-2 ring-brand-600/20 bg-white shadow-card"
                   : "border-slate-200 bg-white"
-              }`}
+                }`}
             >
               <div>
                 {tier.popular && (

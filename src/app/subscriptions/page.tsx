@@ -47,6 +47,7 @@ export default function SubscriptionsPage() {
   const [customerEmail, setCustomerEmail] = useState("");
   const [customerPassword, setCustomerPassword] = useState("");
   const [paymentMethod, setPaymentMethod] = useState<"JazzCash" | "OPay" | "Easypaisa" | "Bank Transfer">("JazzCash");
+  const [orderQty, setOrderQty] = useState<number>(1);
   const [tid, setTid] = useState("");
   const [screenshotUrl, setScreenshotUrl] = useState<string>("");
   const [screenshotName, setScreenshotName] = useState<string>("");
@@ -158,14 +159,18 @@ export default function SubscriptionsPage() {
       finalName = cleanName;
     }
 
+    const totalAmount = isFree 
+      ? "Rs 0 (100% FREE)" 
+      : (currency === "PKR" ? `Rs ${orderingItem.pricePKR * orderQty}` : `$${orderingItem.priceUSD * orderQty}`);
+
     // Save order into persistent real store linked to this customer's account
     addOrder({
       id: `ORD-${Math.floor(1000 + Math.random() * 9000)}`,
       customer: `${finalName || "Customer"} (${customerContact})`,
       customerEmail: finalEmail,
       customerPhone: customerContact,
-      product: `${orderingItem.name} (${orderingItem.typeBadge})`,
-      amount: isFree ? "Rs 0 (100% FREE)" : (currency === "PKR" ? `Rs ${orderingItem.pricePKR}` : `$${orderingItem.priceUSD}`),
+      product: orderQty > 1 ? `${orderingItem.name} x${orderQty} (${orderingItem.typeBadge})` : `${orderingItem.name} (${orderingItem.typeBadge})`,
+      amount: totalAmount,
       date: "Just now",
       status: "Awaiting Delivery",
       type: "subscription",
@@ -300,6 +305,7 @@ export default function SubscriptionsPage() {
                 currency={currency}
                 onOrder={(selected) => {
                   setOrderingItem(selected);
+                  setOrderQty(1);
                   setOrderComplete(false);
                   setCustomerContact("");
                   setTid("");
@@ -351,14 +357,14 @@ export default function SubscriptionsPage() {
                 </div>
                 <h3 className="text-2xl font-black text-slate-900">Payment Proof Submitted!</h3>
                 <p className="text-xs text-slate-600 leading-relaxed max-w-sm mx-auto">
-                  Thank you! Your order for <strong className="text-slate-900">{orderingItem.name}</strong> has been received and saved to your account. Your TID (<strong className="font-mono text-brand-600">{tid || "Recorded"}</strong>) is being verified. Your login credentials will be delivered to <strong className="text-slate-900">{customerContact}</strong> within 5-15 minutes.
+                  Thank you! Your order for <strong className="text-slate-900">{orderQty > 1 ? `${orderingItem.name} (${orderQty} Accounts)` : orderingItem.name}</strong> has been received and saved to your account. Your TID (<strong className="font-mono text-brand-600">{tid || "Recorded"}</strong>) is being verified. Your login credentials will be delivered to <strong className="text-slate-900">{customerContact}</strong> within 5-15 minutes.
                 </p>
                 <div className="pt-3 flex flex-col gap-2.5">
                   <a
                     href={`https://wa.me/923275991628?text=${encodeURIComponent(
                       orderingItem.pricePKR === 0
                         ? `Assalam o Alaikum! I claimed 100% FREE access for ${orderingItem.name}. My WhatsApp is ${customerContact}. Please share my credentials.`
-                        : `Assalam o Alaikum! I submitted payment for ${orderingItem.name}. My WhatsApp is ${customerContact} and TID is ${tid}.`
+                        : `Assalam o Alaikum! I submitted payment for ${orderQty > 1 ? `${orderQty} accounts of ` : ""}${orderingItem.name}. My WhatsApp is ${customerContact} and TID is ${tid}.`
                     )}`}
                     target="_blank"
                     rel="noreferrer"
@@ -508,6 +514,51 @@ export default function SubscriptionsPage() {
                 ) : (
                   /* PAID SUBSCRIPTION FORM - JazzCash / OPay payment proof */
                   <div className="space-y-4">
+                    {/* Bulk Quantity Selector */}
+                    <div className="bg-slate-50 border border-slate-200/80 rounded-2xl p-3.5 space-y-2">
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs font-bold text-slate-800">
+                          Account Quantity (Bulk Stock Available)
+                        </span>
+                        <span className="text-[11px] font-black text-brand-600 bg-brand-50 px-2 py-0.5 rounded-md border border-brand-200">
+                          {orderQty} {orderQty === 1 ? "Account" : "Accounts"} = {currency === "PKR" ? `Rs ${(orderingItem.pricePKR * orderQty).toLocaleString()}` : `$${orderingItem.priceUSD * orderQty}`}
+                        </span>
+                      </div>
+                      
+                      <div className="flex flex-wrap items-center gap-1.5">
+                        {[1, 2, 5, 10, 25, 50].map((qty) => (
+                          <button
+                            key={qty}
+                            type="button"
+                            onClick={() => setOrderQty(qty)}
+                            className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                              orderQty === qty
+                                ? "bg-brand-600 text-white shadow-xs"
+                                : "bg-white border border-slate-200 text-slate-700 hover:border-slate-300"
+                            }`}
+                          >
+                            {qty} {qty === 1 ? "Acc" : "Accs"}
+                          </button>
+                        ))}
+                        <div className="flex items-center gap-1.5 ml-auto">
+                          <span className="text-[11px] text-slate-500 font-semibold">Custom:</span>
+                          <input
+                            type="number"
+                            min="1"
+                            max="500"
+                            value={orderQty}
+                            onChange={(e) => setOrderQty(Math.max(1, parseInt(e.target.value) || 1))}
+                            className="w-16 px-2 py-1 rounded-lg border border-slate-300 text-xs font-bold text-center bg-white text-slate-900"
+                          />
+                        </div>
+                      </div>
+                      {orderQty >= 5 && (
+                        <div className="text-[10px] text-emerald-700 font-bold bg-emerald-50 px-2 py-1 rounded-lg border border-emerald-200 flex items-center justify-between">
+                          <span>🎉 Wholesale Reseller Batch Activated! Priority verification on WhatsApp.</span>
+                        </div>
+                      )}
+                    </div>
+
                     {/* Step 2: Payment Method Selection */}
                     <div>
                       <div className="flex items-center justify-between mb-2">
