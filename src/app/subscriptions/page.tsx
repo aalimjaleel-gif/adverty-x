@@ -19,7 +19,16 @@ import {
   Smartphone,
   UploadCloud
 } from "lucide-react";
-import { getStoredSubscriptions, fetchSubscriptionsFromServer, addOrder } from "@/lib/store";
+import { 
+  getStoredSubscriptions, 
+  fetchSubscriptionsFromServer, 
+  addOrder,
+  getAuthenticatedUser,
+  saveRegisteredUser,
+  loginClient,
+  authenticateWithGoogle,
+  UserProfile
+} from "@/lib/store";
 import { AppSubscriptionItem, APP_SUBSCRIPTIONS } from "@/data/mockData";
 import AppCard from "@/components/subscriptions/AppCard";
 
@@ -28,9 +37,15 @@ export default function SubscriptionsPage() {
   const [selectedCategory, setSelectedCategory] = useState<string>("ALL PRODUCTS");
   const [currency, setCurrency] = useState<"PKR" | "USD">("PKR");
   
+  // Auth state
+  const [currentUser, setCurrentUser] = useState<UserProfile | null>(null);
+
   // Order Modal State
   const [orderingItem, setOrderingItem] = useState<AppSubscriptionItem | null>(null);
   const [customerContact, setCustomerContact] = useState("");
+  const [customerName, setCustomerName] = useState("");
+  const [customerEmail, setCustomerEmail] = useState("");
+  const [customerPassword, setCustomerPassword] = useState("");
   const [paymentMethod, setPaymentMethod] = useState<"JazzCash" | "OPay" | "Easypaisa" | "Bank Transfer">("JazzCash");
   const [tid, setTid] = useState("");
   const [screenshotUrl, setScreenshotUrl] = useState<string>("");
@@ -51,6 +66,14 @@ export default function SubscriptionsPage() {
   };
 
   useEffect(() => {
+    const auth = getAuthenticatedUser();
+    if (auth) {
+      setCurrentUser(auth);
+      setCustomerName(auth.name || "");
+      setCustomerEmail(auth.email || "");
+      if (auth.phone) setCustomerContact(auth.phone);
+    }
+
     const initial = getStoredSubscriptions();
     if (initial && initial.length > 0) setProducts(initial);
     fetchSubscriptionsFromServer().then((list) => {
@@ -61,10 +84,22 @@ export default function SubscriptionsPage() {
       const updated = getStoredSubscriptions();
       if (updated && updated.length > 0) setProducts(updated);
     };
+    const handleAuth = () => {
+      const u = getAuthenticatedUser();
+      setCurrentUser(u);
+      if (u) {
+        setCustomerName(u.name || "");
+        setCustomerEmail(u.email || "");
+        if (u.phone) setCustomerContact(u.phone);
+      }
+    };
+
     window.addEventListener("advertyx_subscriptions_updated", handleUpdate);
+    window.addEventListener("advertyx_auth_changed", handleAuth);
     window.addEventListener("storage", handleUpdate);
     return () => {
       window.removeEventListener("advertyx_subscriptions_updated", handleUpdate);
+      window.removeEventListener("advertyx_auth_changed", handleAuth);
       window.removeEventListener("storage", handleUpdate);
     };
   }, []);
@@ -99,10 +134,36 @@ export default function SubscriptionsPage() {
 
     const isFree = orderingItem.pricePKR === 0;
 
-    // Save order into persistent real store
+    // Ensure user account exists and user is logged in
+    let activeUser = currentUser || getAuthenticatedUser();
+    let finalEmail = activeUser?.email;
+    let finalName = activeUser?.name;
+
+    if (!activeUser) {
+      const cleanEmail = customerEmail.trim().toLowerCase() || `${customerContact.replace(/\D/g, "")}@customer.advertyx.com`;
+      const cleanName = customerName.trim() || `Client ${customerContact.slice(-4)}`;
+      const newUser: UserProfile = {
+        name: cleanName,
+        email: cleanEmail,
+        joinedDate: new Date().toLocaleDateString("en-US", { month: "long", year: "numeric" }),
+        role: "Client & Subscriber",
+        isAdmin: false,
+        phone: customerContact
+      };
+      saveRegisteredUser({ ...newUser, password: customerPassword.trim() || "pass123" });
+      loginClient(newUser);
+      setCurrentUser(newUser);
+      activeUser = newUser;
+      finalEmail = cleanEmail;
+      finalName = cleanName;
+    }
+
+    // Save order into persistent real store linked to this customer's account
     addOrder({
       id: `ORD-${Math.floor(1000 + Math.random() * 9000)}`,
-      customer: customerContact,
+      customer: `${finalName || "Customer"} (${customerContact})`,
+      customerEmail: finalEmail,
+      customerPhone: customerContact,
       product: `${orderingItem.name} (${orderingItem.typeBadge})`,
       amount: isFree ? "Rs 0 (100% FREE)" : (currency === "PKR" ? `Rs ${orderingItem.pricePKR}` : `$${orderingItem.priceUSD}`),
       date: "Just now",
@@ -137,6 +198,46 @@ export default function SubscriptionsPage() {
             <p className="text-xs sm:text-sm text-slate-500 mt-1">
               Guaranteed private profiles, instant WhatsApp activation & full warranty coverage.
             </p>
+          </div>
+
+          {/* Wholesale & Reseller Rates Banner */}
+          <div className="w-full max-w-3xl mx-auto p-4 sm:p-5 rounded-2xl bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 border border-brand-500/40 text-white flex flex-col sm:flex-row items-center justify-between gap-4 shadow-lg">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-emerald-500/20 border border-emerald-400/40 flex items-center justify-center text-emerald-400 flex-shrink-0">
+                <Sparkles className="w-5 h-5" />
+              </div>
+              <div className="text-center sm:text-left">
+                <div className="flex items-center justify-center sm:justify-start gap-2">
+                  <span className="text-xs font-bold text-white">Need Bulk Accounts at Wholesale Rates?</span>
+                  <span className="text-[9px] font-black uppercase px-2 py-0.5 rounded-full bg-emerald-400 text-slate-950">
+                    Reseller Desk
+                  </span>
+                </div>
+                <p className="text-[11px] text-slate-300 mt-0.5">
+                  Are you an agency or reseller buying in bulk (10, 50, 100+ accounts)? Get lowest wholesale rates instantly on WhatsApp.
+                </p>
+              </div>
+            </div>
+            <div className="flex items-center gap-2 flex-shrink-0">
+              <a
+                href="https://wa.me/923275991628?text=Assalam%20o%20Alaikum!%20I%20am%20a%20reseller%20and%20need%20wholesale%20rates%20for%20bulk%20subscriptions."
+                target="_blank"
+                rel="noreferrer"
+                className="px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold whitespace-nowrap shadow-md flex items-center gap-1.5"
+              >
+                <MessageCircle className="w-3.5 h-3.5" />
+                <span>0327-5991628</span>
+              </a>
+              <a
+                href="https://wa.me/923034581115?text=Assalam%20o%20Alaikum!%20I%20am%20a%20reseller%20and%20need%20wholesale%20rates%20for%20bulk%20subscriptions."
+                target="_blank"
+                rel="noreferrer"
+                className="px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-white text-xs font-bold whitespace-nowrap border border-slate-700 flex items-center gap-1.5"
+              >
+                <MessageCircle className="w-3.5 h-3.5" />
+                <span>0303-4581115</span>
+              </a>
+            </div>
           </div>
 
           <div className="w-full max-w-2xl mx-auto overflow-x-auto no-scrollbar py-1">
@@ -250,25 +351,31 @@ export default function SubscriptionsPage() {
                 </div>
                 <h3 className="text-2xl font-black text-slate-900">Payment Proof Submitted!</h3>
                 <p className="text-xs text-slate-600 leading-relaxed max-w-sm mx-auto">
-                  Thank you! Your order for <strong className="text-slate-900">{orderingItem.name}</strong> has been received. Your TID (<strong className="font-mono text-brand-600">{tid || "Recorded"}</strong>) is being verified. Your login credentials will be delivered to <strong className="text-slate-900">{customerContact}</strong> within 5-15 minutes.
+                  Thank you! Your order for <strong className="text-slate-900">{orderingItem.name}</strong> has been received and saved to your account. Your TID (<strong className="font-mono text-brand-600">{tid || "Recorded"}</strong>) is being verified. Your login credentials will be delivered to <strong className="text-slate-900">{customerContact}</strong> within 5-15 minutes.
                 </p>
                 <div className="pt-3 flex flex-col gap-2.5">
                   <a
-                    href={`https://wa.me/255613735391?text=${encodeURIComponent(
+                    href={`https://wa.me/923275991628?text=${encodeURIComponent(
                       orderingItem.pricePKR === 0
-                        ? `Assalam o Alaikum! I have claimed the 100% FREE access for ${orderingItem.name}. My WhatsApp is ${customerContact}. Please share my access credentials.`
-                        : `Assalam o Alaikum! I have submitted payment for ${orderingItem.name}. My WhatsApp is ${customerContact} and TID is ${tid}.`
+                        ? `Assalam o Alaikum! I claimed 100% FREE access for ${orderingItem.name}. My WhatsApp is ${customerContact}. Please share my credentials.`
+                        : `Assalam o Alaikum! I submitted payment for ${orderingItem.name}. My WhatsApp is ${customerContact} and TID is ${tid}.`
                     )}`}
                     target="_blank"
                     rel="noreferrer"
                     className="w-full py-3.5 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold flex items-center justify-center gap-2 shadow-sm"
                   >
                     <MessageCircle className="w-4 h-4" />
-                    <span>Open WhatsApp for Faster Handover</span>
+                    <span>Open WhatsApp (0327-5991628) for Instant Delivery</span>
+                  </a>
+                  <a
+                    href="/profile"
+                    className="w-full py-2.5 rounded-2xl bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold text-center"
+                  >
+                    View Order in My Profile Dashboard →
                   </a>
                   <button
                     onClick={() => setOrderingItem(null)}
-                    className="w-full py-2.5 rounded-2xl border border-slate-200 text-slate-600 hover:bg-slate-50 text-xs font-semibold"
+                    className="w-full py-2 rounded-2xl border border-slate-200 text-slate-600 hover:bg-slate-50 text-xs font-semibold"
                   >
                     Close Window
                   </button>
@@ -306,9 +413,67 @@ export default function SubscriptionsPage() {
                         <span>100% Free Access Granted!</span>
                       </div>
                       <p className="text-xs text-emerald-800 leading-relaxed">
-                        No JazzCash, OPay, or payment receipt needed. Simply provide your WhatsApp number below to receive your private activation credentials.
+                        No JazzCash, OPay, or payment receipt needed. Simply provide your account & WhatsApp details below to receive your private activation credentials.
                       </p>
                     </div>
+
+                    {/* Account Section */}
+                    {currentUser ? (
+                      <div className="p-2.5 rounded-xl bg-emerald-50 border border-emerald-200 text-xs flex items-center justify-between">
+                        <div>
+                          <span className="text-[10px] uppercase font-bold text-emerald-700 block">Logged In Client</span>
+                          <span className="font-bold text-emerald-950">{currentUser.name}</span>
+                          <span className="text-emerald-700 text-[11px] block">{currentUser.email}</span>
+                        </div>
+                        <span className="text-[10px] font-bold text-emerald-800 bg-white px-2 py-0.5 rounded border border-emerald-200">
+                          Active Session
+                        </span>
+                      </div>
+                    ) : (
+                      <div className="p-3 rounded-xl bg-amber-50/70 border border-amber-200 text-xs space-y-2">
+                        <div className="flex items-center justify-between">
+                          <span className="text-[11px] font-bold text-amber-900">Your Account (Access Credentials Saved Here)</span>
+                          <a href="/login?redirect=/subscriptions" className="text-[10px] font-bold text-blue-600 hover:underline">
+                            Existing User? Login →
+                          </a>
+                        </div>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                          <div>
+                            <label className="block text-[10px] font-bold text-slate-700 mb-0.5">Your Full Name *</label>
+                            <input
+                              type="text"
+                              required
+                              placeholder="e.g. Muhammad Usman"
+                              value={customerName}
+                              onChange={(e) => setCustomerName(e.target.value)}
+                              className="w-full px-3 py-1.5 rounded-lg border border-slate-300 text-xs bg-white text-slate-900"
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-[10px] font-bold text-slate-700 mb-0.5">Your Email Address *</label>
+                            <input
+                              type="email"
+                              required
+                              placeholder="e.g. usman@gmail.com"
+                              value={customerEmail}
+                              onChange={(e) => setCustomerEmail(e.target.value)}
+                              className="w-full px-3 py-1.5 rounded-lg border border-slate-300 text-xs bg-white text-slate-900"
+                            />
+                          </div>
+                        </div>
+                        <div>
+                          <label className="block text-[10px] font-bold text-slate-700 mb-0.5">Account Password (To login to your dashboard anytime) *</label>
+                          <input
+                            type="password"
+                            required
+                            placeholder="Create a password for your account"
+                            value={customerPassword}
+                            onChange={(e) => setCustomerPassword(e.target.value)}
+                            className="w-full px-3 py-1.5 rounded-lg border border-slate-300 text-xs bg-white text-slate-900"
+                          />
+                        </div>
+                      </div>
+                    )}
 
                     <div>
                       <label className="block text-xs font-bold text-slate-700 mb-1">
@@ -418,6 +583,64 @@ export default function SubscriptionsPage() {
 
                     {/* Step 3: Customer Proof Inputs */}
                     <div className="space-y-3 pt-1">
+                      {/* Customer Account Identity */}
+                      {currentUser ? (
+                        <div className="p-2.5 rounded-xl bg-emerald-50 border border-emerald-200 text-xs flex items-center justify-between">
+                          <div>
+                            <span className="text-[10px] uppercase font-bold text-emerald-700 block">Logged In Client</span>
+                            <span className="font-bold text-emerald-950">{currentUser.name}</span>
+                            <span className="text-emerald-700 text-[11px] block">{currentUser.email}</span>
+                          </div>
+                          <span className="text-[10px] font-bold text-emerald-800 bg-white px-2 py-0.5 rounded border border-emerald-200">
+                            Verified Account
+                          </span>
+                        </div>
+                      ) : (
+                        <div className="p-3 rounded-xl bg-amber-50/70 border border-amber-200 text-xs space-y-2">
+                          <div className="flex items-center justify-between">
+                            <span className="text-[11px] font-bold text-amber-900">Your Account (Credentials Saved Here)</span>
+                            <a href="/login?redirect=/subscriptions" className="text-[10px] font-bold text-blue-600 hover:underline">
+                              Existing User? Login →
+                            </a>
+                          </div>
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                            <div>
+                              <label className="block text-[10px] font-bold text-slate-700 mb-0.5">Your Full Name *</label>
+                              <input
+                                type="text"
+                                required
+                                placeholder="e.g. Muhammad Usman"
+                                value={customerName}
+                                onChange={(e) => setCustomerName(e.target.value)}
+                                className="w-full px-3 py-1.5 rounded-lg border border-slate-300 text-xs bg-white text-slate-900"
+                              />
+                            </div>
+                            <div>
+                              <label className="block text-[10px] font-bold text-slate-700 mb-0.5">Your Email Address *</label>
+                              <input
+                                type="email"
+                                required
+                                placeholder="e.g. usman@gmail.com"
+                                value={customerEmail}
+                                onChange={(e) => setCustomerEmail(e.target.value)}
+                                className="w-full px-3 py-1.5 rounded-lg border border-slate-300 text-xs bg-white text-slate-900"
+                              />
+                            </div>
+                          </div>
+                          <div>
+                            <label className="block text-[10px] font-bold text-slate-700 mb-0.5">Create Account Password (To log back in anytime) *</label>
+                            <input
+                              type="password"
+                              required
+                              placeholder="Create a password for your account"
+                              value={customerPassword}
+                              onChange={(e) => setCustomerPassword(e.target.value)}
+                              className="w-full px-3 py-1.5 rounded-lg border border-slate-300 text-xs bg-white text-slate-900"
+                            />
+                          </div>
+                        </div>
+                      )}
+
                       <div>
                         <label className="block text-xs font-bold text-slate-700 mb-1">
                           Your WhatsApp Number (for instant credential delivery) *

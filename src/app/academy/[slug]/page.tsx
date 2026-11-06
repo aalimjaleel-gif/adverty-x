@@ -659,7 +659,7 @@ export default function CourseDetailsPage() {
                 </p>
                 <div className="pt-3 flex flex-col gap-2.5">
                   <a
-                    href={`https://wa.me/255613735391?text=${encodeURIComponent(`Assalam o Alaikum! I enrolled in "${course.title}". My WhatsApp is ${customerContact} and TID is ${tid}.`)}`}
+                    href={`https://wa.me/923275991628?text=${encodeURIComponent(`Assalam o Alaikum! I enrolled in "${course.title}". My WhatsApp is ${customerContact} and TID is ${tid}.`)}`}
                     target="_blank"
                     rel="noreferrer"
                     className="w-full py-3.5 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold flex items-center justify-center gap-2 shadow-sm"

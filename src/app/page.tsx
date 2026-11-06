@@ -64,41 +64,43 @@ export default function HomePage() {
               
               {/* Category Pill */}
               <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-brand-50 border border-brand-200/70 text-brand-700 text-xs font-semibold tracking-wide shadow-xs">
-                <span className="w-1.5 h-1.5 rounded-full bg-brand-600 animate-pulse"></span>
-                <span>Digital Agency</span>
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                <span>Bulk Subscriptions</span>
                 <span className="text-brand-300">•</span>
-                <span>Academy</span>
+                <span>Reseller Wholesale</span>
                 <span className="text-brand-300">•</span>
-                <span>Subscriptions</span>
+                <span>Academy Courses</span>
               </div>
 
               {/* Main Headline */}
               <h1 className="text-3xl sm:text-5xl lg:text-6xl font-extrabold text-slate-900 tracking-tight leading-[1.18] sm:leading-[1.12]">
-                Build Your Brand. <span className="hidden sm:inline"><br /></span>
-                Grow Your Business. <span className="hidden sm:inline"><br /></span>
+                Premium Subscriptions. <span className="hidden sm:inline"><br /></span>
+                Wholesale Reseller Deals. <span className="hidden sm:inline"><br /></span>
                 With <span className="text-gradient">Adverty X.</span>
               </h1>
 
               {/* Subtitle */}
               <p className="text-sm sm:text-lg text-slate-600 max-w-xl leading-relaxed">
-                We provide modern digital solutions including web development, automation, social media management, paid ads, courses, and premium subscriptions — all in one place.
+                Direct private profiles, bulk accounts at wholesale reseller rates, and hands-on skill courses with 24/7 instant WhatsApp delivery & replacement warranty.
               </p>
 
               {/* Action Buttons */}
               <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 pt-2 w-full sm:w-auto">
                 <a
-                  href="/services"
+                  href="/subscriptions"
                   className="w-full sm:w-auto text-center justify-center px-6 py-3.5 text-sm font-semibold text-white bg-brand-600 hover:bg-brand-700 active:bg-brand-800 rounded-xl shadow-sm hover:shadow-brand-500/25 transition-all flex items-center gap-2"
                 >
-                  <span>Get Started</span>
+                  <span>Explore Subscriptions</span>
                   <ArrowRight className="w-4 h-4" />
                 </a>
 
                 <a
-                  href="/services"
-                  className="w-full sm:w-auto text-center justify-center px-6 py-3.5 text-sm font-semibold text-slate-700 hover:text-slate-900 bg-white hover:bg-slate-50 border border-slate-200 rounded-xl transition-colors shadow-xs"
+                  href="https://wa.me/923275991628?text=Assalam%20o%20Alaikum!%20I%20am%20interested%20in%20bulk%20subscriptions%20and%20reseller%20rates."
+                  target="_blank"
+                  rel="noreferrer"
+                  className="w-full sm:w-auto text-center justify-center px-6 py-3.5 text-sm font-semibold text-emerald-700 hover:text-emerald-800 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 rounded-xl transition-colors shadow-xs flex items-center gap-2"
                 >
-                  <span>Explore Services</span>
+                  <span>Wholesale Reseller Desk</span>
                 </a>
               </div>
 
@@ -265,131 +267,146 @@ export default function HomePage() {
       </section>
 
       {/* =========================================================================
-          OUR SERVICES SECTION (Matches Section 2 & Top-Middle of Reference Preview)
+          FEATURED APP SUBSCRIPTIONS & BULK RESELLER SECTION
       ========================================================================= */}
       <section className="py-16 md:py-24 bg-slate-50/50">
         <div className="max-w-[1600px] mx-auto px-4 sm:px-8 lg:px-12">
           
-          <div className="flex flex-col md:flex-row md:items-end justify-between mb-12">
+          <div className="flex flex-col md:flex-row md:items-end justify-between mb-8">
             <div>
-              <div className="flex items-center gap-2 mb-2">
-                <span className="text-xs font-extrabold uppercase tracking-widest text-brand-600 block">
-                  WHAT WE DO
-                </span>
-                <span className="inline-flex items-center gap-1 text-[10px] font-black uppercase tracking-wider px-2.5 py-0.5 rounded-full bg-amber-100 text-amber-800 border border-amber-200">
-                  <Clock className="w-3 h-3 text-amber-600" />
-                  <span>Coming Soon • Pre-Booking Open</span>
-                </span>
+              <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-brand-50 text-brand-700 text-xs font-bold mb-3">
+                <Sparkles className="w-3.5 h-3.5" />
+                <span>Adverty X Subscriptions</span>
               </div>
               <h2 className="text-3xl sm:text-4xl font-extrabold text-slate-900 tracking-tight">
-                Our Agency Services
+                Premium App Subscriptions & Bulk Accounts
               </h2>
               <p className="text-slate-600 text-sm sm:text-base mt-2 max-w-xl">
-                We offer a complete range of digital services to help your business grow and succeed online. Launching soon with full delivery pipelines.
+                Verified digital subscriptions, private profiles, and warranty-backed licenses for CapCut Pro, Netflix 4K, YouTube Premium, Surfshark VPN, Canva Pro, and ChatGPT Plus.
               </p>
             </div>
 
             <a
-              href="/services"
+              href="/subscriptions"
               className="mt-4 md:mt-0 inline-flex items-center gap-1.5 text-sm font-bold text-brand-600 hover:text-brand-700"
             >
-              <span>View All Services</span>
+              <span>View All Subscriptions</span>
               <ArrowRight className="w-4 h-4" />
             </a>
           </div>
 
-          {/* 6 Services Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {AGENCY_SERVICES.map((service) => {
-              const IconComponent = 
-                service.id === "serv-1" ? Monitor :
-                service.id === "serv-2" ? Palette :
-                service.id === "serv-3" ? Cog :
-                service.id === "serv-4" ? Share2 :
-                service.id === "serv-5" ? Megaphone : Video;
+          {/* Wholesale Reseller Highlight Banner */}
+          <div className="mb-10 p-5 sm:p-6 rounded-3xl bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 border border-brand-500/30 text-white flex flex-col md:flex-row items-start md:items-center justify-between gap-6 shadow-xl">
+            <div className="flex items-start gap-4">
+              <div className="w-12 h-12 rounded-2xl bg-emerald-500/20 border border-emerald-400/40 flex items-center justify-center flex-shrink-0 text-emerald-400">
+                <Sparkles className="w-6 h-6" />
+              </div>
+              <div>
+                <div className="flex items-center gap-2 mb-1">
+                  <h3 className="text-base font-bold text-white">Need Bulk Accounts at Reseller Rates?</h3>
+                  <span className="text-[10px] font-black uppercase px-2 py-0.5 rounded-md bg-emerald-400 text-slate-950">
+                    Wholesale Available
+                  </span>
+                </div>
+                <p className="text-xs text-slate-300 leading-relaxed max-w-2xl">
+                  Are you an agency or reseller buying 10, 50, or 100+ accounts in bulk? Get direct distributor discounts, dedicated stock allocation & instant replacement guarantee.
+                </p>
+              </div>
+            </div>
+            <div className="flex items-center gap-2.5 flex-shrink-0 w-full sm:w-auto">
+              <a
+                href="https://wa.me/923275991628?text=Assalam%20o%20Alaikum!%20I%20am%20a%20reseller%20looking%20for%20bulk%20subscriptions."
+                target="_blank"
+                rel="noreferrer"
+                className="px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs shadow-md transition-all flex items-center gap-1.5 flex-1 sm:flex-none justify-center"
+              >
+                <span>WhatsApp 0327-5991628</span>
+              </a>
+              <a
+                href="https://wa.me/923034581115?text=Assalam%20o%20Alaikum!%20I%20am%20a%20reseller%20looking%20for%20bulk%20subscriptions."
+                target="_blank"
+                rel="noreferrer"
+                className="px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-white font-bold text-xs border border-slate-700 transition-all flex items-center gap-1.5 flex-1 sm:flex-none justify-center"
+              >
+                <span>0303-4581115</span>
+              </a>
+            </div>
+          </div>
 
-              return (
-                <div
-                  key={service.id}
-                  className={`relative flex flex-col justify-between bg-white rounded-2xl p-6 sm:p-7 border transition-all duration-200 hover:shadow-card hover:-translate-y-1 ${
-                    service.isAddon 
-                      ? "border-brand-200/90 ring-1 ring-brand-100" 
-                      : "border-slate-200/80"
-                  }`}
-                >
-                  {/* Top Badges */}
-                  <div className="flex items-start justify-between mb-5">
-                    <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${
-                      service.color === "purple" ? "bg-purple-50 text-purple-600" :
-                      service.color === "cyan" ? "bg-cyan-50 text-cyan-600" :
-                      service.color === "blue" ? "bg-blue-50 text-blue-600" :
-                      service.color === "pink" ? "bg-pink-50 text-pink-600" :
-                      service.color === "rose" ? "bg-rose-50 text-rose-600" : "bg-purple-50 text-purple-600"
-                    }`}>
-                      <IconComponent className="w-6 h-6" />
-                    </div>
-
-                    <div className="flex items-center gap-1.5 flex-wrap justify-end">
-                      <span className="text-[10px] font-black uppercase tracking-wider px-2.5 py-1 rounded-full bg-amber-100 text-amber-800 border border-amber-200 flex items-center gap-1 shadow-2xs">
-                        <Clock className="w-3 h-3 text-amber-600" />
-                        <span>Coming Soon</span>
-                      </span>
-                      {service.isAddon ? (
-                        <span className="text-[11px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-full bg-brand-100 text-brand-700">
-                          Paid Add-on
-                        </span>
-                      ) : null}
-                    </div>
+          {/* 4 Featured App Cards */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-4">
+            {[
+              {
+                name: "Capcut Pro (Mobile)",
+                desc: "1 Month • Private",
+                warranty: "28-day warranty",
+                rating: "4.8 (5078)",
+                price: "Rs 450",
+                type: "capcut",
+                inStock: true,
+              },
+              {
+                name: "Netflix Premium (4K)",
+                desc: "1 Month • Private Screen",
+                warranty: "25-day warranty",
+                rating: "4.7 (815)",
+                price: "Rs 300",
+                type: "netflix",
+                inStock: true,
+              },
+              {
+                name: "YouTube Premium",
+                desc: "1 Month • Customer Gmail",
+                warranty: "30-day warranty",
+                rating: "4.8 (22)",
+                price: "Rs 300",
+                type: "youtube",
+                inStock: true,
+              },
+              {
+                name: "Surfshark VPN",
+                desc: "1 Month • User Login",
+                warranty: "30-day warranty",
+                rating: "4.6 (522)",
+                price: "Rs 250",
+                type: "surfshark",
+                inStock: true,
+              },
+            ].map((app, idx) => (
+              <div 
+                key={idx}
+                className="bg-white rounded-3xl border border-slate-200 p-6 flex flex-col justify-between hover:shadow-card transition-all text-center"
+              >
+                <div>
+                  <div className="w-14 h-14 rounded-2xl bg-slate-50 border border-slate-100 mx-auto flex items-center justify-center font-black text-xl text-slate-900 mb-3">
+                    {app.type === "netflix" ? <span className="text-red-600 font-black">N</span> :
+                     app.type === "youtube" ? <span className="text-red-600 font-black">▶</span> :
+                     app.type === "surfshark" ? <span className="text-teal-500 font-black">S</span> :
+                     <span className="text-slate-900 font-black">✂</span>}
                   </div>
-
-                  {/* Title & Desc */}
-                  <div>
-                    <h3 className="text-xl font-bold text-slate-900 mb-2">
-                      {service.title}
-                    </h3>
-                    <p className="text-slate-600 text-sm leading-relaxed mb-5">
-                      {service.shortDesc}
-                    </p>
-
-                    {/* Add-on Notice if applicable */}
-                    {service.addonNotice && (
-                      <div className="mb-4 p-2.5 rounded-lg bg-amber-50 border border-amber-200 text-amber-800 text-xs font-medium">
-                        {service.addonNotice}
-                      </div>
-                    )}
-
-                    {/* Deliverables snippet */}
-                    <ul className="space-y-2 mb-6">
-                      {service.deliverables.slice(0, 4).map((d, i) => (
-                        <li key={i} className="flex items-center gap-2 text-xs text-slate-600">
-                          <Check className="w-3.5 h-3.5 text-brand-600 flex-shrink-0" />
-                          <span>{d}</span>
-                        </li>
-                      ))}
-                    </ul>
+                  <h3 className="font-bold text-slate-900 text-sm mb-1">{app.name}</h3>
+                  <span className="inline-block text-[10px] font-semibold text-slate-500 bg-slate-100 px-2.5 py-0.5 rounded-full mb-2">
+                    {app.desc}
+                  </span>
+                  <div className="text-[11px] font-bold text-emerald-600 mb-2">
+                    🛡️ {app.warranty}
                   </div>
-
-                  {/* Price & Action */}
-                  <div className="pt-4 border-t border-slate-100 flex items-center justify-between">
-                    <div>
-                      <span className="text-[10px] text-slate-400 block font-bold uppercase tracking-wider">Availability</span>
-                      <span className="text-xs font-black text-amber-700 uppercase tracking-wide bg-amber-50 px-2.5 py-1 rounded-lg border border-amber-200/80 inline-flex items-center gap-1 mt-0.5">
-                        <Clock className="w-3 h-3 text-amber-600" />
-                        <span>Pre-Booking</span>
-                      </span>
-                    </div>
-
-                    <a
-                      href={`/services/${service.slug}`}
-                      className="inline-flex items-center gap-1.5 text-xs font-bold text-slate-700 hover:text-brand-600 bg-slate-100 hover:bg-brand-50 px-3.5 py-2 rounded-xl transition-all group"
-                    >
-                      <span>Explore Service</span>
-                      <ArrowRight className="w-3.5 h-3.5 transition-transform group-hover:translate-x-1" />
-                    </a>
+                  <div className="text-amber-500 text-xs font-bold mb-4">
+                    ★★★★★ <span className="text-slate-700">{app.rating}</span>
                   </div>
                 </div>
-              );
-            })}
+
+                <div className="pt-2">
+                  <div className="text-xl font-black text-slate-900 mb-3">{app.price}</div>
+                  <a
+                    href="/subscriptions"
+                    className="w-full py-2.5 rounded-xl bg-brand-600 hover:bg-brand-700 text-white text-xs font-bold block"
+                  >
+                    Order Now
+                  </a>
+                </div>
+              </div>
+            ))}
           </div>
 
         </div>
@@ -527,110 +544,46 @@ export default function HomePage() {
       </section>
 
       {/* =========================================================================
-          ADVERTY X APP SUBSCRIPTIONS SHOWCASE (Matches User Screenshot 1)
+          AGENCY CLIENT SERVICES PRE-LAUNCH TEASER (COMING SOON)
       ========================================================================= */}
-      <section className="py-16 md:py-24 bg-slate-50/50 border-t border-slate-100">
+      <section className="py-14 bg-white border-t border-slate-100">
         <div className="max-w-[1600px] mx-auto px-4 sm:px-8 lg:px-12">
-          
-          <div className="flex flex-col md:flex-row md:items-end justify-between mb-12">
-            <div>
-              <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-brand-50 text-brand-700 text-xs font-bold mb-3">
-                <Sparkles className="w-3.5 h-3.5" />
-                <span>Adverty X Subscriptions</span>
+          <div className="p-8 sm:p-10 rounded-3xl bg-slate-50 border border-slate-200 flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
+            <div className="space-y-2 max-w-2xl">
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-extrabold uppercase tracking-widest text-slate-400">
+                  Adverty X Agency
+                </span>
+                <span className="text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full bg-amber-100 text-amber-800 border border-amber-200">
+                  Coming Soon
+                </span>
               </div>
-              <h2 className="text-3xl sm:text-4xl font-extrabold text-slate-900 tracking-tight">
-                Premium App Subscriptions & Accounts
-              </h2>
-              <p className="text-slate-600 text-sm sm:text-base mt-2 max-w-xl">
-                Verified digital subscriptions, private profiles, and warranty-backed licenses for CapCut Pro, Netflix 4K, YouTube Premium, Surfshark VPN, Canva Pro, and ChatGPT Plus.
+              <h3 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
+                Web Development, Automation & Media Services
+              </h3>
+              <p className="text-xs sm:text-sm text-slate-600 leading-relaxed">
+                We are setting up dedicated turnkey pipelines for custom agency projects. In the meantime, custom proposals and early-bird requests can be scheduled directly with our lead developers on WhatsApp.
               </p>
             </div>
 
-            <a
-              href="/subscriptions"
-              className="mt-4 md:mt-0 inline-flex items-center gap-1.5 text-sm font-bold text-brand-600 hover:text-brand-700"
-            >
-              <span>View All App Subscriptions</span>
-              <ArrowRight className="w-4 h-4" />
-            </a>
-          </div>
-
-          {/* 4 Featured App Cards */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-            {[
-              {
-                name: "Capcut Pro (Mobile)",
-                desc: "1 Month • Private",
-                warranty: "28-day warranty",
-                rating: "4.8 (5078)",
-                price: "Rs 450",
-                type: "capcut",
-                inStock: true,
-              },
-              {
-                name: "Netflix Premium (4K)",
-                desc: "1 Month • Private Screen",
-                warranty: "25-day warranty",
-                rating: "4.7 (815)",
-                price: "Rs 300",
-                type: "netflix",
-                inStock: true,
-              },
-              {
-                name: "YouTube Premium",
-                desc: "1 Month • Customer Gmail",
-                warranty: "30-day warranty",
-                rating: "4.8 (22)",
-                price: "Rs 300",
-                type: "youtube",
-                inStock: true,
-              },
-              {
-                name: "Surfshark VPN",
-                desc: "1 Month • User Login",
-                warranty: "30-day warranty",
-                rating: "4.6 (522)",
-                price: "Rs 250",
-                type: "surfshark",
-                inStock: true,
-              },
-            ].map((app, idx) => (
-              <div 
-                key={idx}
-                className="bg-white rounded-3xl border border-slate-200 p-6 flex flex-col justify-between hover:shadow-card transition-all text-center"
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full md:w-auto flex-shrink-0">
+              <a
+                href="/services"
+                className="px-5 py-2.5 rounded-xl border border-slate-300 hover:bg-white text-slate-800 font-bold text-xs text-center"
               >
-                <div>
-                  <div className="w-14 h-14 rounded-2xl bg-slate-50 border border-slate-100 mx-auto flex items-center justify-center font-black text-xl text-slate-900 mb-3">
-                    {app.type === "netflix" ? <span className="text-red-600 font-black">N</span> :
-                     app.type === "youtube" ? <span className="text-red-600 font-black">▶</span> :
-                     app.type === "surfshark" ? <span className="text-teal-500 font-black">S</span> :
-                     <span className="text-slate-900 font-black">✂</span>}
-                  </div>
-                  <h3 className="font-bold text-slate-900 text-sm mb-1">{app.name}</h3>
-                  <span className="inline-block text-[10px] font-semibold text-slate-500 bg-slate-100 px-2.5 py-0.5 rounded-full mb-2">
-                    {app.desc}
-                  </span>
-                  <div className="text-[11px] font-bold text-emerald-600 mb-2">
-                    🛡️ {app.warranty}
-                  </div>
-                  <div className="text-amber-500 text-xs font-bold mb-4">
-                    ★★★★★ <span className="text-slate-700">{app.rating}</span>
-                  </div>
-                </div>
-
-                <div className="pt-2">
-                  <div className="text-xl font-black text-slate-900 mb-3">{app.price}</div>
-                  <a
-                    href="/subscriptions"
-                    className="w-full py-2.5 rounded-xl bg-brand-600 hover:bg-brand-700 text-white text-xs font-bold block"
-                  >
-                    Order Now
-                  </a>
-                </div>
-              </div>
-            ))}
+                View Services Roadmap
+              </a>
+              <a
+                href="https://wa.me/923275991628?text=Assalam%20o%20Alaikum!%20I%20have%20an%20agency%20project%20inquiry."
+                target="_blank"
+                rel="noreferrer"
+                className="px-5 py-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs text-center shadow-sm flex items-center justify-center gap-1.5"
+              >
+                <span>WhatsApp Consultation</span>
+                <ArrowRight className="w-3.5 h-3.5" />
+              </a>
+            </div>
           </div>
-
         </div>
       </section>
 

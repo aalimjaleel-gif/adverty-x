@@ -53,48 +53,75 @@ export default function ContactPage() {
               </p>
 
               <div className="space-y-4 text-xs text-slate-700">
+                {/* WhatsApp Line 1 */}
                 <a 
-                  href="https://wa.me/255613735391" 
+                  href="https://wa.me/923275991628?text=Assalam%20o%20Alaikum!%20I%20have%20an%20inquiry%20regarding%20Adverty%20X." 
                   target="_blank" 
                   rel="noreferrer"
-                  className="flex items-center gap-3 p-2 -mx-2 rounded-xl hover:bg-emerald-50/80 transition-colors group"
+                  className="flex items-center gap-3 p-2.5 -mx-2 rounded-xl hover:bg-emerald-50/80 transition-colors group border border-slate-200/60 bg-white"
                 >
-                  <div className="w-9 h-9 rounded-xl bg-emerald-100 text-emerald-700 flex items-center justify-center flex-shrink-0 group-hover:scale-105 transition-transform">
+                  <div className="w-10 h-10 rounded-xl bg-emerald-100 text-emerald-700 flex items-center justify-center flex-shrink-0 group-hover:scale-105 transition-transform">
                     <Phone className="w-4 h-4" />
                   </div>
-                  <div>
-                    <span className="text-[10px] text-emerald-700 font-bold uppercase block">WhatsApp Support</span>
-                    <span className="font-semibold text-slate-900 group-hover:text-emerald-700 transition-colors">+255 613 735 391</span>
+                  <div className="flex-1">
+                    <div className="flex items-center justify-between">
+                      <span className="text-[10px] text-emerald-700 font-bold uppercase block">Primary WhatsApp Support</span>
+                      <span className="text-[9px] font-bold text-emerald-700 bg-emerald-50 px-1.5 py-0.2 rounded border border-emerald-200">Online 24/7</span>
+                    </div>
+                    <span className="font-bold text-slate-900 group-hover:text-emerald-700 transition-colors text-sm">0327-5991628</span>
                   </div>
                 </a>
 
-                <div className="flex items-center gap-3">
-                  <div className="w-9 h-9 rounded-xl bg-white border border-slate-200 flex items-center justify-center text-brand-600">
+                {/* WhatsApp Line 2 */}
+                <a 
+                  href="https://wa.me/923034581115?text=Assalam%20o%20Alaikum!%20I%20have%20an%20inquiry%20regarding%20Adverty%20X." 
+                  target="_blank" 
+                  rel="noreferrer"
+                  className="flex items-center gap-3 p-2.5 -mx-2 rounded-xl hover:bg-emerald-50/80 transition-colors group border border-slate-200/60 bg-white"
+                >
+                  <div className="w-10 h-10 rounded-xl bg-emerald-100 text-emerald-700 flex items-center justify-center flex-shrink-0 group-hover:scale-105 transition-transform">
+                    <Phone className="w-4 h-4" />
+                  </div>
+                  <div className="flex-1">
+                    <div className="flex items-center justify-between">
+                      <span className="text-[10px] text-emerald-700 font-bold uppercase block">Secondary WhatsApp / Reseller Desk</span>
+                      <span className="text-[9px] font-bold text-slate-600 bg-slate-100 px-1.5 py-0.2 rounded">Bulk Orders</span>
+                    </div>
+                    <span className="font-bold text-slate-900 group-hover:text-emerald-700 transition-colors text-sm">0303-4581115</span>
+                  </div>
+                </a>
+
+                {/* Email */}
+                <a 
+                  href="mailto:advertyx.info@gmail.com"
+                  className="flex items-center gap-3 p-2.5 -mx-2 rounded-xl hover:bg-slate-100 transition-colors group border border-slate-200/60 bg-white"
+                >
+                  <div className="w-10 h-10 rounded-xl bg-blue-50 text-brand-600 flex items-center justify-center flex-shrink-0">
                     <Mail className="w-4 h-4" />
                   </div>
                   <div>
-                    <span className="text-[10px] text-slate-400 font-bold uppercase block">Email Inquiries</span>
-                    <span className="font-semibold text-slate-900">contact@advertyx.com</span>
+                    <span className="text-[10px] text-slate-400 font-bold uppercase block">Official Email</span>
+                    <span className="font-bold text-slate-900 group-hover:text-brand-600 transition-colors text-sm">advertyx.info@gmail.com</span>
                   </div>
-                </div>
+                </a>
 
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-3 p-2">
                   <div className="w-9 h-9 rounded-xl bg-white border border-slate-200 flex items-center justify-center text-brand-600">
                     <MessageSquare className="w-4 h-4" />
                   </div>
                   <div>
-                    <span className="text-[10px] text-slate-400 font-bold uppercase block">Business Inquiries</span>
-                    <span className="font-semibold text-slate-900">Monday - Friday: 9am - 6pm PKT</span>
+                    <span className="text-[10px] text-slate-400 font-bold uppercase block">Business Hours</span>
+                    <span className="font-semibold text-slate-900">Monday - Sunday: 9am - 12am PKT</span>
                   </div>
                 </div>
 
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-3 p-2">
                   <div className="w-9 h-9 rounded-xl bg-white border border-slate-200 flex items-center justify-center text-brand-600">
                     <MapPin className="w-4 h-4" />
                   </div>
                   <div>
-                    <span className="text-[10px] text-slate-400 font-bold uppercase block">Global Operations</span>
-                    <span className="font-semibold text-slate-900">Islamabad, Pakistan & International Remote</span>
+                    <span className="text-[10px] text-slate-400 font-bold uppercase block">Operations Headquarters</span>
+                    <span className="font-semibold text-slate-900">Pakistan & Remote Digital Delivery</span>
                   </div>
                 </div>
               </div>
@@ -215,8 +242,41 @@ export default function ContactPage() {
                 className="bg-white rounded-2xl border border-slate-200 p-8 shadow-card space-y-5"
               >
                 <div className="border-b border-slate-100 pb-3">
-                  <h3 className="text-lg font-bold text-slate-900">Send an Inquiry</h3>
-                  <p className="text-xs text-slate-500">Fill in the fields below and we will prepare a personalized scope.</p>
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                    <div>
+                      <h3 className="text-lg font-bold text-slate-900">Send an Inquiry or Wholesale Request</h3>
+                      <p className="text-xs text-slate-500">Fill in the fields below or reach us directly on WhatsApp for instant wholesale pricing.</p>
+                    </div>
+                    <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-full border border-emerald-200 self-start sm:self-auto">
+                      ● Reseller Desk Active
+                    </span>
+                  </div>
+                </div>
+
+                {/* Direct WhatsApp Quick Callout */}
+                <div className="p-3.5 rounded-xl bg-gradient-to-r from-emerald-500/10 via-teal-500/10 to-indigo-500/10 border border-emerald-300/60 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+                  <div>
+                    <span className="text-xs font-bold text-emerald-900 block">Need Instant Bulk Reseller Rates?</span>
+                    <span className="text-[11px] text-emerald-800">Get discounted pricing within 2 minutes directly on WhatsApp.</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <a
+                      href="https://wa.me/923275991628?text=Assalam%20o%20Alaikum!%20I%20am%20interested%20in%20Reseller%20Rates%20for%20bulk%20subscriptions."
+                      target="_blank"
+                      rel="noreferrer"
+                      className="px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-[11px] font-bold shadow-xs whitespace-nowrap"
+                    >
+                      WhatsApp 0327-5991628
+                    </a>
+                    <a
+                      href="https://wa.me/923034581115?text=Assalam%20o%20Alaikum!%20I%20am%20interested%20in%20Reseller%20Rates%20for%20bulk%20subscriptions."
+                      target="_blank"
+                      rel="noreferrer"
+                      className="px-3 py-1.5 rounded-lg bg-slate-900 hover:bg-slate-800 text-white text-[11px] font-bold shadow-xs whitespace-nowrap"
+                    >
+                      0303-4581115
+                    </a>
+                  </div>
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -225,7 +285,7 @@ export default function ContactPage() {
                     <input
                       type="text"
                       required
-                      placeholder="e.g. Michael Scott"
+                      placeholder="e.g. Muhammad Usman"
                       value={formData.name}
                       onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                       className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs focus:ring-2 focus:ring-brand-500"
@@ -236,7 +296,7 @@ export default function ContactPage() {
                     <input
                       type="email"
                       required
-                      placeholder="michael@dundermifflin.com"
+                      placeholder="usman@gmail.com"
                       value={formData.email}
                       onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                       className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs focus:ring-2 focus:ring-brand-500"
@@ -246,41 +306,43 @@ export default function ContactPage() {
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-xs font-bold text-slate-700 uppercase mb-1">Division of Interest</label>
+                    <label className="block text-xs font-bold text-slate-700 uppercase mb-1">Division / Service of Interest</label>
                     <select
                       value={formData.division}
                       onChange={(e) => setFormData({ ...formData, division: e.target.value })}
-                      className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs bg-white"
+                      className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs bg-white font-medium text-slate-800"
                     >
-                      <option>Agency Services</option>
-                      <option>Adverty X Academy</option>
-                      <option>Adverty X Subscriptions</option>
-                      <option>Partnerships & General Inquiries</option>
+                      <option>Bulk Reseller Subscriptions (Wholesale)</option>
+                      <option>Retail App Subscriptions (Single / Few)</option>
+                      <option>Adverty X Academy Courses</option>
+                      <option>Custom Agency & Partnerships</option>
+                      <option>General Support / Inquiry</option>
                     </select>
                   </div>
 
                   <div>
-                    <label className="block text-xs font-bold text-slate-700 uppercase mb-1">Planned Budget</label>
+                    <label className="block text-xs font-bold text-slate-700 uppercase mb-1">Quantity / Planned Budget</label>
                     <select
                       value={formData.budget}
                       onChange={(e) => setFormData({ ...formData, budget: e.target.value })}
-                      className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs bg-white"
+                      className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs bg-white font-medium text-slate-800"
                     >
-                      <option>Under $300</option>
-                      <option>$300 - $500</option>
-                      <option>$500 - $1,000</option>
-                      <option>$1,000 - $3,000</option>
-                      <option>$3,000+</option>
+                      <option>Bulk Reseller (10 - 50 Accounts)</option>
+                      <option>Wholesale Tier (50 - 200 Accounts)</option>
+                      <option>Distributor Tier (200+ Accounts)</option>
+                      <option>Single Account / Retail (1 - 3 Accounts)</option>
+                      <option>Academy Course Training</option>
+                      <option>Custom Budget / Negotiable</option>
                     </select>
                   </div>
                 </div>
 
                 <div>
-                  <label className="block text-xs font-bold text-slate-700 uppercase mb-1">Project Details & Requirements *</label>
+                  <label className="block text-xs font-bold text-slate-700 uppercase mb-1">Requirements or Specific Tools Needed *</label>
                   <textarea
                     rows={4}
                     required
-                    placeholder="Tell us about your brand, what you need built, timelines, and specific objectives..."
+                    placeholder="List the subscriptions, courses, or quantities you need (e.g. Canva Pro, ChatGPT, Coursera, Netflix bulk accounts)..."
                     value={formData.message}
                     onChange={(e) => setFormData({ ...formData, message: e.target.value })}
                     className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs focus:ring-2 focus:ring-brand-500"
@@ -295,11 +357,11 @@ export default function ContactPage() {
                   {loading ? (
                     <>
                       <RefreshCw className="w-4 h-4 animate-spin" />
-                      <span>Dispatching Message...</span>
+                      <span>Dispatching Inquiry...</span>
                     </>
                   ) : (
                     <>
-                      <span>Send Project Inquiry</span>
+                      <span>Submit Inquiry / Request WhatsApp Contact</span>
                       <ArrowRight className="w-4 h-4" />
                     </>
                   )}

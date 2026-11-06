@@ -64,7 +64,7 @@ export default function AutomationPage() {
                 </div>
               </div>
               <a
-                href={`https://wa.me/255613735391?text=Assalam%20o%20Alaikum!%20I%20want%20to%20pre-book%20the%20Automation%20service%20(${encodeURIComponent(item.title)}).`}
+                href={`https://wa.me/923275991628?text=Assalam%20o%20Alaikum!%20I%20want%20to%20inquire%20about%20the%20Automation%20service%20(${encodeURIComponent(item.title)}).`}
                 target="_blank"
                 rel="noreferrer"
                 className="w-full py-2.5 rounded-xl bg-amber-500 hover:bg-amber-600 text-slate-950 text-xs font-black text-center block transition-colors shadow-sm"

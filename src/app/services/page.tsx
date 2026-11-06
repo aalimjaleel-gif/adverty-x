@@ -37,32 +37,40 @@ export default function ServicesPage() {
         </div>
 
         {/* Coming Soon Announcement Callout */}
-        <div className="mb-12 p-6 rounded-3xl bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 border border-brand-500/30 text-white flex flex-col md:flex-row items-start md:items-center justify-between gap-6 shadow-xl">
+        <div className="mb-12 p-6 sm:p-8 rounded-3xl bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 border border-brand-500/30 text-white flex flex-col md:flex-row items-start md:items-center justify-between gap-6 shadow-xl">
           <div className="flex items-start gap-4">
             <div className="w-12 h-12 rounded-2xl bg-amber-400/20 border border-amber-400/40 flex items-center justify-center flex-shrink-0 text-amber-300">
               <Sparkles className="w-6 h-6" />
             </div>
             <div>
               <div className="flex items-center gap-2 mb-1">
-                <h3 className="text-base font-bold text-white">Agency Services Are Coming Soon!</h3>
+                <h3 className="text-base font-bold text-white">Agency Client Services Are Under Preparation!</h3>
                 <span className="text-[10px] font-black uppercase px-2 py-0.5 rounded-md bg-amber-400 text-slate-950">
-                  Pre-Launch
+                  Coming Soon
                 </span>
               </div>
               <p className="text-xs text-slate-300 leading-relaxed max-w-2xl">
-                We are finalizing our dedicated delivery pipelines to deliver unbeatable turnaround times. Need a custom project or want to be first in line? Talk to our founders directly on WhatsApp.
+                We are currently focusing 100% of our operations on <strong>Bulk App Subscriptions (Wholesale/Retail)</strong> and <strong>Adverty Academy Masterclasses</strong>. Agency client services will launch soon! Custom projects can still be consulted directly with our founders on WhatsApp.
               </p>
             </div>
           </div>
-          <a
-            href="https://wa.me/255613735391?text=Assalam%20o%20Alaikum!%20I%20am%20interested%20in%20pre-booking%20an%20Adverty%20X%20Agency%20Service."
-            target="_blank"
-            rel="noreferrer"
-            className="px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs shadow-lg shadow-emerald-600/30 transition-all flex items-center gap-2 flex-shrink-0"
-          >
-            <span>Pre-Book on WhatsApp</span>
-            <ArrowRight className="w-4 h-4" />
-          </a>
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5 flex-shrink-0 w-full md:w-auto">
+            <a
+              href="/subscriptions"
+              className="px-5 py-2.5 rounded-xl bg-brand-600 hover:bg-brand-500 text-white font-bold text-xs text-center shadow-lg transition-all"
+            >
+              Browse Subscriptions →
+            </a>
+            <a
+              href="https://wa.me/923275991628?text=Assalam%20o%20Alaikum!%20I%20am%20interested%20in%20an%20Adverty%20X%20Agency%20Service%20or%20Custom%20Project."
+              target="_blank"
+              rel="noreferrer"
+              className="px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs shadow-lg shadow-emerald-600/30 transition-all flex items-center justify-center gap-2"
+            >
+              <span>Custom WhatsApp Consult</span>
+              <ArrowRight className="w-4 h-4" />
+            </a>
+          </div>
         </div>
 
         {/* 6 Large Service Cards (2 Columns x 3 Rows) */}
@@ -75,7 +83,7 @@ export default function ServicesPage() {
               service.id === "serv-4" ? Share2 :
               service.id === "serv-5" ? Megaphone : Video;
 
-            const waLink = `https://wa.me/255613735391?text=Assalam%20o%20Alaikum!%20I%20want%20to%20pre-book%20the%20${encodeURIComponent(service.title)}%20service.`;
+            const waLink = `https://wa.me/923275991628?text=Assalam%20o%20Alaikum!%20I%20want%20to%20inquire%20about%20the%20${encodeURIComponent(service.title)}%20service.`;
 
             return (
               <div
@@ -163,12 +171,12 @@ export default function ServicesPage() {
             While official automated checkout is coming soon, we are actively taking select high-growth projects manually.
           </p>
           <a
-            href="https://wa.me/255613735391?text=Assalam%20o%20Alaikum!%20I%20have%20a%20custom%20agency%20project%20inquiry."
+            href="https://wa.me/923275991628?text=Assalam%20o%20Alaikum!%20I%20have%20a%20custom%20agency%20project%20inquiry."
             target="_blank"
             rel="noreferrer"
             className="px-6 py-3 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs inline-flex items-center gap-2 shadow-sm"
           >
-            <span>Request Custom Consultation via WhatsApp</span>
+            <span>Request Custom Consultation via WhatsApp (0327-5991628)</span>
             <ArrowRight className="w-4 h-4" />
           </a>
         </div>

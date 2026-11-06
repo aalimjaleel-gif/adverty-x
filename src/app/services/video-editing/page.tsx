@@ -124,7 +124,7 @@ export default function VideoEditingPage() {
               </div>
 
               <a
-                href={`https://wa.me/255613735391?text=Assalam%20o%20Alaikum!%20I%20want%20to%20pre-book%20the%20Video%20Editing%20package%20(${encodeURIComponent(tier.name)}).`}
+                href={`https://wa.me/923275991628?text=Assalam%20o%20Alaikum!%20I%20want%20to%20inquire%20about%20the%20Video%20Editing%20package%20(${encodeURIComponent(tier.name)}).`}
                 target="_blank"
                 rel="noreferrer"
                 className="w-full py-3 rounded-xl text-xs font-black text-center block transition-all bg-amber-500 hover:bg-amber-600 active:bg-amber-700 text-slate-950 shadow-sm"

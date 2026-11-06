@@ -90,9 +90,17 @@ export default function UserProfilePage() {
       isAdmin: !!authUser.isAdmin
     });
 
-    // 2. Load orders
+    // 2. Load orders filtered for this specific customer (or all if admin)
     const allOrders = getStoredOrders();
-    setOrders(allOrders);
+    const filterUserOrders = (list: OrderItem[]) => {
+      if (authUser.isAdmin) return list;
+      const cleanEmail = authUser.email.toLowerCase().trim();
+      return list.filter(o => 
+        (o.customerEmail && o.customerEmail.toLowerCase().trim() === cleanEmail) ||
+        (o.customer && o.customer.toLowerCase().includes(cleanEmail))
+      );
+    };
+    setOrders(filterUserOrders(allOrders));
 
     // 3. Load referral commission rates set by admin
     setReferralSettings(getReferralSettings());
@@ -101,7 +109,7 @@ export default function UserProfilePage() {
     setPayoutHistory(getPayoutRequests());
 
     // Listen to updates
-    const handleOrderUpdate = () => setOrders(getStoredOrders());
+    const handleOrderUpdate = () => setOrders(filterUserOrders(getStoredOrders()));
     const handleRefUpdate = () => setReferralSettings(getReferralSettings());
     const handlePayoutUpdate = () => setPayoutHistory(getPayoutRequests());
 
@@ -296,13 +304,13 @@ export default function UserProfilePage() {
             </div>
             <div className="flex flex-wrap items-center gap-3">
               <a 
-                href="https://wa.me/255613735391?text=Assalam%20o%20Alaikum!%20I%20have%20an%20order%20inquiry."
+                href="https://wa.me/923275991628?text=Assalam%20o%20Alaikum!%20I%20have%20an%20order%20inquiry."
                 target="_blank"
                 rel="noreferrer"
                 className="text-emerald-400 hover:text-white text-xs font-semibold flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-500/10 border border-emerald-500/20 hover:bg-emerald-500/20 transition-all"
               >
                 <Phone className="w-3.5 h-3.5" />
-                <span>Priority Support WhatsApp</span>
+                <span>Priority Support WhatsApp (0327-5991628)</span>
               </a>
 
               <div className="flex items-center gap-1.5 pl-2 border-l border-white/10">

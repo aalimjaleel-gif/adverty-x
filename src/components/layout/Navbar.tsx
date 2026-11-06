@@ -48,10 +48,10 @@ export default function Navbar() {
 
   const navLinks = [
     { name: "Home", href: "/" },
-    { name: "Services", href: "/services", hasDropdown: true, badge: "Soon" },
-    { name: "Portfolio", href: "/portfolio" },
+    { name: "Subscriptions", href: "/subscriptions", badge: "Bulk & Retail" },
     { name: "Academy", href: "/academy", badge: "Learn" },
-    { name: "Subscriptions", href: "/subscriptions" },
+    { name: "Portfolio", href: "/portfolio" },
+    { name: "Services", href: "/services", hasDropdown: false, badge: "Soon" },
     { name: "About", href: "/about" },
     { name: "Contact", href: "/contact" },
   ];
@@ -271,12 +271,12 @@ export default function Navbar() {
               </div>
             </div>
             <a
-              href="https://wa.me/255613735391"
+              href="https://wa.me/923275991628"
               target="_blank"
               rel="noreferrer"
               className="px-3 py-1.5 rounded-xl bg-emerald-600 text-white text-[11px] font-bold shadow-xs active:scale-95 transition-transform"
             >
-              Chat Now
+              Chat (0327-5991628)
             </a>
           </div>
 

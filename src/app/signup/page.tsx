@@ -2,7 +2,12 @@
 
 import React, { useState } from "react";
 import { User, Lock, Mail, ArrowRight, ShieldCheck, Github, X } from "lucide-react";
-import { loginClient } from "@/lib/store";
+import { 
+  loginClient, 
+  saveRegisteredUser, 
+  authenticateWithGoogle,
+  RegisteredUser 
+} from "@/lib/store";
 
 export default function SignUpPage() {
   const [name, setName] = useState("");
@@ -46,14 +51,25 @@ export default function SignUpPage() {
       return;
     }
 
-    loginClient({
-      name: name.trim() || email.split("@")[0].replace(/[._]/g, " "),
-      email: email.trim(),
-      joinedDate: "October 2026",
+    const cleanEmail = email.trim().toLowerCase();
+    const cleanName = name.trim() || cleanEmail.split("@")[0].replace(/[._]/g, " ");
+
+    const newUser: RegisteredUser = {
+      name: cleanName,
+      email: cleanEmail,
+      password: password,
+      joinedDate: new Date().toLocaleDateString("en-US", { month: "long", year: "numeric" }),
       role: "Client & Student",
+      provider: "email",
       isAdmin: false
-    });
-    window.location.href = "/profile";
+    };
+
+    saveRegisteredUser(newUser);
+    loginClient(newUser);
+
+    const searchParams = new URLSearchParams(window.location.search);
+    const redirectUrl = searchParams.get("redirect") || "/profile";
+    window.location.href = redirectUrl;
   };
 
   const handleGoogleSubmit = (e: React.FormEvent) => {
@@ -66,16 +82,12 @@ export default function SignUpPage() {
     const cleanEmail = googleEmail.trim();
     const cleanName = googleName.trim() || cleanEmail.split("@")[0].replace(/[._]/g, " ");
 
-    loginClient({
-      name: cleanName,
-      email: cleanEmail,
-      joinedDate: "October 2026",
-      role: "Verified Google Client",
-      provider: "google",
-      isAdmin: false
-    });
+    authenticateWithGoogle(cleanEmail, cleanName);
     setIsGoogleModalOpen(false);
-    window.location.href = "/profile";
+
+    const searchParams = new URLSearchParams(window.location.search);
+    const redirectUrl = searchParams.get("redirect") || "/profile";
+    window.location.href = redirectUrl;
   };
 
   const handleGithubSubmit = (e: React.FormEvent) => {

@@ -2,7 +2,16 @@
 
 import React, { useState } from "react";
 import { User, Lock, Mail, ArrowRight, ShieldCheck, Github, X } from "lucide-react";
-import { setAdminAuthenticated, loginAdmin, loginClient, logoutAll } from "@/lib/store";
+import { 
+  setAdminAuthenticated, 
+  loginAdmin, 
+  loginClient, 
+  logoutAll,
+  authenticateWithPassword,
+  authenticateWithGoogle,
+  getRegisteredUsers,
+  RegisteredUser
+} from "@/lib/store";
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");
@@ -14,15 +23,17 @@ export default function LoginPage() {
   const [isGoogleModalOpen, setIsGoogleModalOpen] = useState(false);
   const [googleName, setGoogleName] = useState("");
   const [googleEmail, setGoogleEmail] = useState("");
+  const [savedAccounts, setSavedAccounts] = useState<RegisteredUser[]>([]);
 
   const [isGithubModalOpen, setIsGithubModalOpen] = useState(false);
   const [githubUsername, setGithubUsername] = useState("");
   const [githubEmail, setGithubEmail] = useState("");
 
-  // Prevent browser password manager from autofilling saved admin credentials
+  // Prevent browser password manager from autofilling saved admin credentials & load known accounts
   React.useEffect(() => {
     setEmail("");
     setPassword("");
+    setSavedAccounts(getRegisteredUsers());
     const t1 = setTimeout(() => {
       setEmail("");
       setPassword("");
@@ -46,22 +57,20 @@ export default function LoginPage() {
       return;
     }
 
-    // Check if logging in as Admin
-    if (email.trim().toLowerCase() === "admin@advertyx.com" && password === "AdminPassword123!") {
-      loginAdmin();
+    const authRes = authenticateWithPassword(email, password);
+    if (!authRes.success) {
+      setError(authRes.error || "Invalid credentials. Please verify your password.");
+      return;
+    }
+
+    if (authRes.user?.isAdmin) {
       window.location.href = "/admin";
       return;
     }
 
-    // Customer Login -> Stores unified session and routes to User Profile
-    loginClient({
-      name: email.split("@")[0].replace(/[._]/g, " "),
-      email: email.trim(),
-      joinedDate: "October 2026",
-      role: "Client & Student",
-      isAdmin: false
-    });
-    window.location.href = "/profile";
+    const searchParams = new URLSearchParams(window.location.search);
+    const redirectUrl = searchParams.get("redirect") || "/profile";
+    window.location.href = redirectUrl;
   };
 
   const handleGoogleSubmit = (e: React.FormEvent) => {
@@ -74,16 +83,23 @@ export default function LoginPage() {
     const cleanEmail = googleEmail.trim();
     const cleanName = googleName.trim() || cleanEmail.split("@")[0].replace(/[._]/g, " ");
 
-    loginClient({
-      name: cleanName,
-      email: cleanEmail,
-      joinedDate: "October 2026",
-      role: "Verified Google Client",
-      provider: "google",
-      isAdmin: false
-    });
+    authenticateWithGoogle(cleanEmail, cleanName);
     setIsGoogleModalOpen(false);
-    window.location.href = "/profile";
+
+    const searchParams = new URLSearchParams(window.location.search);
+    const redirectUrl = searchParams.get("redirect") || "/profile";
+    window.location.href = redirectUrl;
+  };
+
+  const handleQuickSelectAccount = (account: RegisteredUser) => {
+    if (account.provider === "google") {
+      authenticateWithGoogle(account.email, account.name);
+    } else {
+      loginClient(account);
+    }
+    const searchParams = new URLSearchParams(window.location.search);
+    const redirectUrl = searchParams.get("redirect") || "/profile";
+    window.location.href = redirectUrl;
   };
 
   const handleGithubSubmit = (e: React.FormEvent) => {
@@ -264,7 +280,7 @@ export default function LoginPage() {
             </button>
 
             {/* Google Header */}
-            <div className="text-center mb-6">
+            <div className="text-center mb-5">
               <div className="w-12 h-12 rounded-2xl bg-slate-50 border border-slate-200 flex items-center justify-center mx-auto mb-3 shadow-xs">
                 <svg className="w-6 h-6" viewBox="0 0 24 24">
                   <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
@@ -278,6 +294,41 @@ export default function LoginPage() {
                 Choose an account or enter your Gmail to continue to <strong className="text-slate-700">Adverty X</strong>
               </p>
             </div>
+
+            {/* Quick Saved Accounts (If Any) */}
+            {savedAccounts.filter(a => a.email && !a.isAdmin).length > 0 && (
+              <div className="mb-4 space-y-1.5">
+                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">
+                  Previously Used on this Device
+                </span>
+                <div className="space-y-1 max-h-36 overflow-y-auto">
+                  {savedAccounts.filter(a => a.email && !a.isAdmin).map((acc) => (
+                    <button
+                      key={acc.email}
+                      type="button"
+                      onClick={() => handleQuickSelectAccount(acc)}
+                      className="w-full text-left p-2.5 rounded-xl border border-slate-200 hover:border-blue-400 hover:bg-blue-50/50 flex items-center justify-between group transition-all"
+                    >
+                      <div className="flex items-center gap-2.5 truncate">
+                        <div className="w-7 h-7 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center font-bold text-xs flex-shrink-0">
+                          {acc.name ? acc.name.charAt(0).toUpperCase() : "U"}
+                        </div>
+                        <div className="truncate">
+                          <div className="text-xs font-bold text-slate-900 group-hover:text-blue-700 truncate">{acc.name}</div>
+                          <div className="text-[11px] text-slate-500 truncate">{acc.email}</div>
+                        </div>
+                      </div>
+                      <span className="text-[10px] font-bold text-blue-600 bg-white px-2 py-0.5 rounded-md border border-slate-200 shadow-xs flex-shrink-0">
+                        Sign In →
+                      </span>
+                    </button>
+                  ))}
+                </div>
+                <div className="text-center my-2">
+                  <span className="text-[10px] text-slate-400">or enter another Gmail</span>
+                </div>
+              </div>
+            )}
 
             <form onSubmit={handleGoogleSubmit} className="space-y-4">
               <div>
@@ -306,6 +357,9 @@ export default function LoginPage() {
                   onChange={(e) => setGoogleEmail(e.target.value)}
                   className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs text-slate-900 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white"
                 />
+                <span className="text-[10px] text-slate-400 mt-1 block">
+                  ✓ Your previous orders & credentials load automatically with this Gmail.
+                </span>
               </div>
 
               <div className="pt-2 flex items-center justify-end gap-2">

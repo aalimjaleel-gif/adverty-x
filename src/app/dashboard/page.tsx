@@ -154,8 +154,8 @@ export default function UnifiedMasterPanel() {
   // Profile / Settings State
   const [profileSettings, setProfileSettings] = useState({
     adminName: "Adverty X Admin",
-    email: "admin@advertyx.com",
-    whatsapp: "+255613735391",
+    email: "advertyx.info@gmail.com",
+    whatsapp: "0327-5991628",
     currency: "PKR"
   });
 
@@ -1613,12 +1613,12 @@ export default function UnifiedMasterPanel() {
                       Instantly connect with clients for credentials handover, warranty replacement, or service onboarding.
                     </p>
                     <a
-                      href="https://wa.me/255613735391"
+                      href="https://wa.me/923275991628"
                       target="_blank"
                       rel="noreferrer"
                       className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold"
                     >
-                      Open WhatsApp Web
+                      Open WhatsApp Web (0327-5991628)
                     </a>
                   </div>
 

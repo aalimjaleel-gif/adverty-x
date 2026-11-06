@@ -8,7 +8,8 @@ import {
   GraduationCap, 
   Sparkles, 
   User,
-  ShieldCheck 
+  ShieldCheck,
+  Phone
 } from "lucide-react";
 import { getAuthenticatedUser, isAdminAuthenticated, UserProfile } from "@/lib/store";
 
@@ -70,11 +71,11 @@ export default function MobileBottomNav() {
       isActive: pathname === "/",
     },
     {
-      label: "Services",
-      href: "/services",
-      icon: Layers,
-      badge: "Soon",
-      isActive: pathname.startsWith("/services"),
+      label: "Apps",
+      href: "/subscriptions",
+      icon: Sparkles,
+      badge: "Hot",
+      isActive: pathname.startsWith("/subscriptions"),
     },
     {
       label: "Academy",
@@ -84,11 +85,10 @@ export default function MobileBottomNav() {
       isActive: pathname.startsWith("/academy"),
     },
     {
-      label: "Apps",
-      href: "/subscriptions",
-      icon: Sparkles,
-      badge: "Hot",
-      isActive: pathname.startsWith("/subscriptions"),
+      label: "Contact",
+      href: "/contact",
+      icon: Phone,
+      isActive: pathname.startsWith("/contact"),
     },
     accountTabItem,
   ];

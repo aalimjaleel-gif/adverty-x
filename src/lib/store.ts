@@ -11,6 +11,7 @@ export interface OrderItem {
   id: string;
   customer: string;
   customerEmail?: string;
+  customerPhone?: string;
   product: string;
   amount: string;
   date: string;
@@ -50,6 +51,7 @@ const SUBSCRIPTIONS_STORAGE_KEY = "advertyx_subscriptions_data";
 const SERVICES_STORAGE_KEY = "advertyx_services_data";
 const ORDERS_STORAGE_KEY = "advertyx_orders_data";
 const AUTH_STORAGE_KEY = "advertyx_admin_logged_in";
+const REGISTERED_USERS_KEY = "advertyx_registered_users";
 const REFERRAL_SETTINGS_KEY = "advertyx_referral_settings";
 const PAYOUTS_STORAGE_KEY = "advertyx_payout_requests";
 
@@ -100,6 +102,121 @@ export interface UserProfile {
   role: string;
   isAdmin?: boolean;
   provider?: string;
+  phone?: string;
+}
+
+export interface RegisteredUser extends UserProfile {
+  password?: string;
+}
+
+export function getRegisteredUsers(): RegisteredUser[] {
+  if (typeof window === "undefined") return [];
+  try {
+    const raw = localStorage.getItem(REGISTERED_USERS_KEY);
+    if (!raw) return [];
+    return JSON.parse(raw);
+  } catch (e) {
+    return [];
+  }
+}
+
+export function saveRegisteredUser(user: RegisteredUser): void {
+  if (typeof window === "undefined") return;
+  const users = getRegisteredUsers();
+  const existingIdx = users.findIndex(u => u.email.toLowerCase() === user.email.toLowerCase());
+  if (existingIdx >= 0) {
+    users[existingIdx] = { ...users[existingIdx], ...user };
+  } else {
+    users.push(user);
+  }
+  localStorage.setItem(REGISTERED_USERS_KEY, JSON.stringify(users));
+}
+
+export function authenticateWithPassword(email: string, password: string): { success: boolean; user?: UserProfile; error?: string } {
+  const cleanEmail = email.trim().toLowerCase();
+  
+  // Admin bypass
+  if (cleanEmail === "admin@advertyx.com" && password === "AdminPassword123!") {
+    loginAdmin();
+    return { 
+      success: true, 
+      user: {
+        name: "Adverty X Admin",
+        email: "admin@advertyx.com",
+        joinedDate: "October 2026",
+        role: "Master Administrator",
+        isAdmin: true
+      } 
+    };
+  }
+
+  const users = getRegisteredUsers();
+  const found = users.find(u => u.email.toLowerCase() === cleanEmail);
+
+  if (found) {
+    if (found.password && found.password !== password) {
+      return { success: false, error: "Incorrect password. Please try again." };
+    }
+    const profile: UserProfile = {
+      name: found.name,
+      email: found.email,
+      joinedDate: found.joinedDate || "October 2026",
+      role: found.role || "Client & Student",
+      isAdmin: false,
+      provider: found.provider,
+      phone: found.phone
+    };
+    loginClient(profile);
+    return { success: true, user: profile };
+  }
+
+  // If user is logging in for the first time with new credentials, auto-register them
+  const newUser: RegisteredUser = {
+    name: cleanEmail.split("@")[0].replace(/[._]/g, " "),
+    email: cleanEmail,
+    password: password,
+    joinedDate: new Date().toLocaleDateString("en-US", { month: "long", year: "numeric" }),
+    role: "Client & Student",
+    provider: "email",
+    isAdmin: false
+  };
+  saveRegisteredUser(newUser);
+  loginClient(newUser);
+  return { success: true, user: newUser };
+}
+
+export function authenticateWithGoogle(email: string, name?: string): UserProfile {
+  const cleanEmail = email.trim().toLowerCase();
+  const users = getRegisteredUsers();
+  const found = users.find(u => u.email.toLowerCase() === cleanEmail);
+
+  if (found) {
+    // Existing account found - retain their exact profile and previous orders!
+    const profile: UserProfile = {
+      name: found.name || name || cleanEmail.split("@")[0],
+      email: found.email,
+      joinedDate: found.joinedDate || "October 2026",
+      role: found.role || "Verified Google Client",
+      provider: "google",
+      isAdmin: false,
+      phone: found.phone
+    };
+    loginClient(profile);
+    return profile;
+  }
+
+  // Brand new Google user
+  const newUser: RegisteredUser = {
+    name: name?.trim() || cleanEmail.split("@")[0].replace(/[._]/g, " "),
+    email: cleanEmail,
+    joinedDate: new Date().toLocaleDateString("en-US", { month: "long", year: "numeric" }),
+    role: "Verified Google Client",
+    provider: "google",
+    isAdmin: false
+  };
+  saveRegisteredUser(newUser);
+  loginClient(newUser);
+  return newUser;
 }
 
 export function isAdminAuthenticated(): boolean {
