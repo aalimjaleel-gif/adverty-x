@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useMemo } from "react";
 import { useParams } from "next/navigation";
 import { getStoredCourses, fetchCoursesFromServer, addOrder } from "@/lib/store";
-import { ACADEMY_COURSES, CourseItem, LessonItem } from "@/data/mockData";
+import { ACADEMY_COURSES, CourseItem, LessonItem, CoursePricingTier } from "@/data/mockData";
 import { 
   PlayCircle, 
   Lock, 
@@ -170,7 +170,88 @@ export default function CourseDetailsPage() {
     }
   }, [allLessons, activeLesson]);
 
-  const pricePKR = Math.round((course.price || 0) * 278);
+  // Pricing tiers: 1-Month / Trial Plan vs Lifetime VIP Access
+  const pricingTiers: CoursePricingTier[] = useMemo(() => {
+    if (course.pricingTiers && course.pricingTiers.length > 0) {
+      return course.pricingTiers;
+    }
+    const lifetimePKR = Math.round((course.price || 6) * 278);
+    const trialPKR = Math.max(300, Math.round(lifetimePKR * 0.5));
+    const trialUSD = Math.max(1, Math.round((course.price || 6) * 0.5));
+    return [
+      {
+        id: "1month",
+        name: "1 Month (Trial Access)",
+        duration: "30 Days Streaming Access",
+        priceUSD: trialUSD,
+        pricePKR: trialPKR,
+        badge: "Trial Plan",
+        description: "Full in-browser streaming access to all lectures for 30 days."
+      },
+      {
+        id: "lifetime",
+        name: "Lifetime VIP Access",
+        duration: "Permanent Lifetime Access",
+        priceUSD: course.price,
+        pricePKR: lifetimePKR,
+        badge: "Recommended",
+        description: "Permanent unlimited access, future module updates, and certificate."
+      }
+    ];
+  }, [course]);
+
+  const [selectedTierId, setSelectedTierId] = useState<string>("lifetime");
+  const selectedTier = pricingTiers.find((t) => t.id === selectedTierId) || pricingTiers[0] || {
+    id: "lifetime",
+    name: "Lifetime Access",
+    duration: "Lifetime",
+    priceUSD: course.price,
+    pricePKR: Math.round((course.price || 0) * 278)
+  };
+
+  const effectivePricePKR = selectedTier.pricePKR;
+  const effectivePriceUSD = selectedTier.priceUSD;
+  const pricePKR = effectivePricePKR;
+
+  // Partner Vendor Detection
+  const isPartnerCourse = Boolean(
+    course.vendor?.isPartner ||
+    (course.vendor?.vendorName && course.vendor.vendorName !== "Adverty X Official")
+  );
+
+  const activeCourseAccounts = {
+    JazzCash: (isPartnerCourse && course.vendor?.JazzCash?.number)
+      ? {
+          number: course.vendor.JazzCash.number,
+          title: course.vendor.JazzCash.title || course.vendor.vendorName
+        }
+      : { number: "03034581115", title: "Ali Ahmed" },
+    OPay: (isPartnerCourse && course.vendor?.OPay?.number)
+      ? {
+          number: course.vendor.OPay.number,
+          title: course.vendor.OPay.title || course.vendor.vendorName
+        }
+      : { number: "03244973465", title: "Shazia Khalil" },
+    Easypaisa: (isPartnerCourse && course.vendor?.Easypaisa?.number)
+      ? {
+          number: course.vendor.Easypaisa.number,
+          title: course.vendor.Easypaisa.title || course.vendor.vendorName
+        }
+      : { number: "03034581115", title: "Ali Ahmed" },
+    BankTransfer: (isPartnerCourse && course.vendor?.BankTransfer?.accountNumber)
+      ? {
+          bankName: course.vendor.BankTransfer.bankName,
+          accountTitle: course.vendor.BankTransfer.accountTitle,
+          accountNumber: course.vendor.BankTransfer.accountNumber
+        }
+      : {
+          bankName: "Meezan Bank",
+          accountTitle: "Adverty X Digital Services",
+          accountNumber: "02010108821992"
+        }
+  };
+
+  const hasPartnerCourseEasypaisa = Boolean(isPartnerCourse && course.vendor?.Easypaisa?.number);
 
   const handleCopy = (text: string, key: string) => {
     navigator.clipboard.writeText(text);
@@ -217,13 +298,15 @@ export default function CourseDetailsPage() {
     addOrder({
       id: `ORD-${Math.floor(1000 + Math.random() * 9000)}`,
       customer: customerContact,
-      product: `Course: ${course.title}`,
-      amount: `Rs ${pricePKR.toLocaleString()} ($${course.price})`,
+      product: `Course: ${course.title} (${selectedTier.name})`,
+      amount: `Rs ${effectivePricePKR.toLocaleString()} ($${effectivePriceUSD})`,
       date: "Just now",
       status: "Awaiting Delivery",
       type: "course",
       tid: tid,
       paymentMethod: paymentMethod,
+      vendorName: isPartnerCourse ? course.vendor?.vendorName : "Adverty X Official",
+      planDuration: selectedTier.name,
       screenshotUrl: screenshotUrl || undefined,
       screenshotName: screenshotName || undefined,
       deliveryGuaranteedWithin: "12 Hours",
@@ -655,17 +738,21 @@ export default function CourseDetailsPage() {
                 </div>
                 <h3 className="text-2xl font-black text-slate-900">Enrollment Proof Submitted!</h3>
                 <p className="text-xs text-slate-600 leading-relaxed max-w-sm mx-auto">
-                  Thank you! Your enrollment request for <strong className="text-slate-900">{course.title}</strong> has been received. Your TID (<strong className="font-mono text-brand-600">{tid || "Recorded"}</strong>) is registered. All lectures have been unlocked for your session!
+                  Thank you! Your enrollment request for <strong className="text-slate-900">{course.title} ({selectedTier.name})</strong> has been received. Your TID (<strong className="font-mono text-brand-600">{tid || "Recorded"}</strong>) is registered. All lectures have been unlocked for your session!
                 </p>
                 <div className="pt-3 flex flex-col gap-2.5">
                   <a
-                    href={`https://wa.me/923275991628?text=${encodeURIComponent(`Assalam o Alaikum! I enrolled in "${course.title}". My WhatsApp is ${customerContact} and TID is ${tid}.`)}`}
+                    href={`https://wa.me/${(isPartnerCourse && course.vendor?.vendorWhatsApp) ? course.vendor.vendorWhatsApp.replace(/\D/g, "") : "923275991628"}?text=${encodeURIComponent(`Assalam o Alaikum! I enrolled in "${course.title}" (${selectedTier.name}). My WhatsApp is ${customerContact} and TID is ${tid}.`)}`}
                     target="_blank"
                     rel="noreferrer"
                     className="w-full py-3.5 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold flex items-center justify-center gap-2 shadow-sm"
                   >
                     <MessageCircle className="w-4 h-4" />
-                    <span>Open WhatsApp for Instant Support</span>
+                    <span>
+                      {isPartnerCourse && course.vendor?.vendorWhatsApp
+                        ? `Open Instructor WhatsApp (${course.vendor.vendorWhatsApp})`
+                        : "Open WhatsApp (0327-5991628) for Instant Support"}
+                    </span>
                   </a>
                   <button
                     onClick={() => {
@@ -689,13 +776,69 @@ export default function CourseDetailsPage() {
                     <h3 className="text-lg font-bold text-slate-900 truncate max-w-xs">{course.title}</h3>
                     <div className="text-right">
                       <span className="text-lg font-black text-brand-600 block">
-                        Rs {pricePKR.toLocaleString()}
+                        Rs {effectivePricePKR.toLocaleString()}
                       </span>
-                      <span className="text-[11px] text-slate-400 font-mono">(${course.price} USD)</span>
+                      <span className="text-[11px] text-slate-400 font-mono">(${effectivePriceUSD} USD)</span>
                     </div>
                   </div>
-                  <span className="text-xs text-slate-500">Permanent Lifetime Access • All {allLessons.length} Lectures Unlocked</span>
+                  <span className="text-xs text-slate-500">{selectedTier.name} • {selectedTier.duration}</span>
                 </div>
+
+                {/* Plan Tier Selector: 1 Month Trial vs Lifetime */}
+                <div className="space-y-2">
+                  <span className="text-xs font-bold text-slate-800 uppercase tracking-wider block">
+                    Choose Your Access Duration:
+                  </span>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                    {pricingTiers.map((tier) => {
+                      const isSelected = selectedTierId === tier.id;
+                      return (
+                        <button
+                          key={tier.id}
+                          type="button"
+                          onClick={() => setSelectedTierId(tier.id)}
+                          className={`p-3 rounded-2xl border text-left transition-all cursor-pointer relative ${
+                            isSelected
+                              ? "border-brand-600 bg-brand-50/70 ring-2 ring-brand-500 shadow-xs"
+                              : "border-slate-200 bg-slate-50/50 hover:bg-slate-50 text-slate-700"
+                          }`}
+                        >
+                          {tier.badge && (
+                            <span className={`text-[9px] font-black uppercase px-2 py-0.5 rounded-full absolute top-2 right-2 ${
+                              isSelected ? "bg-brand-600 text-white" : "bg-slate-200 text-slate-700"
+                            }`}>
+                              {tier.badge}
+                            </span>
+                          )}
+                          <span className="text-xs font-black text-slate-900 block">{tier.name}</span>
+                          <span className="text-[11px] text-slate-500 block mb-1">{tier.duration}</span>
+                          <div className="flex items-baseline gap-1 mt-1">
+                            <span className="text-sm font-black text-brand-600">Rs {tier.pricePKR.toLocaleString()}</span>
+                            <span className="text-[11px] text-slate-400">(${tier.priceUSD})</span>
+                          </div>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* Partner Vendor Notice */}
+                {isPartnerCourse ? (
+                  <div className="p-2.5 rounded-xl bg-purple-50 border border-purple-200 text-purple-950 text-xs space-y-0.5">
+                    <span className="font-bold flex items-center gap-1.5">
+                      <span className="w-2 h-2 rounded-full bg-purple-600 animate-pulse"></span>
+                      Course Partner: {course.vendor?.vendorName}
+                    </span>
+                    <span className="text-[11px] text-purple-800 block">
+                      Transfer course fees directly to this instructor/partner account below.
+                    </span>
+                  </div>
+                ) : (
+                  <div className="p-2 rounded-xl bg-blue-50/70 border border-blue-200 text-blue-900 text-xs flex items-center justify-between">
+                    <span className="font-semibold text-[11px]">Official Adverty X Academy Masterclass</span>
+                    <span className="text-[10px] text-blue-700 font-bold">Verified Direct Access</span>
+                  </div>
+                )}
 
                 {/* Payment Method Selector */}
                 <div>
@@ -705,9 +848,9 @@ export default function CourseDetailsPage() {
                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                     {[
                       { key: "JazzCash" as const, label: "JazzCash", isComingSoon: false },
-                      { key: "OPay" as const, label: "OPay", isComingSoon: false },
-                      { key: "Easypaisa" as const, label: "Easypaisa", isComingSoon: true },
-                      { key: "Bank Transfer" as const, label: "Meezan Bank", isComingSoon: true }
+                      { key: "OPay" as const, label: "OPay", isComingSoon: isPartnerCourse && !course.vendor?.OPay?.number },
+                      { key: "Easypaisa" as const, label: "Easypaisa", isComingSoon: !hasPartnerCourseEasypaisa },
+                      { key: "Bank Transfer" as const, label: "Bank Transfer", isComingSoon: false }
                     ].map((m) => {
                       const isSelected = paymentMethod === m.key;
                       if (m.isComingSoon) {
@@ -715,7 +858,7 @@ export default function CourseDetailsPage() {
                           <div
                             key={m.key}
                             className="p-2 sm:p-2.5 rounded-xl border border-dashed border-slate-200 bg-slate-50/80 text-center text-xs opacity-75 cursor-not-allowed select-none flex flex-col items-center justify-center"
-                            title={`${m.label} is coming soon! Please pay via JazzCash or OPay.`}
+                            title={`${m.label} is coming soon! Please pay via JazzCash or Bank Transfer.`}
                           >
                             <span className="font-semibold text-slate-400">{m.label}</span>
                             <span className="text-[9px] font-bold text-amber-700 bg-amber-50 px-1.5 py-0.2 rounded border border-amber-200 mt-1">
@@ -747,24 +890,26 @@ export default function CourseDetailsPage() {
                 <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200 space-y-2.5">
                   <div className="flex items-center justify-between">
                     <span className="text-xs font-bold text-slate-800">
-                      Transfer exact amount (Rs {pricePKR.toLocaleString()}) to:
+                      Transfer exact amount (Rs {effectivePricePKR.toLocaleString()}) to:
                     </span>
-                    <span className="text-[10px] font-bold text-brand-600 uppercase">Official Account</span>
+                    <span className="text-[10px] font-bold text-brand-600 uppercase">
+                      {isPartnerCourse ? `${course.vendor?.vendorName} Account` : "Official Account"}
+                    </span>
                   </div>
 
                   {paymentMethod === "JazzCash" && (
                     <div className="bg-white p-3 rounded-xl border border-slate-200 space-y-1.5 text-xs">
                       <div className="flex justify-between items-center">
                         <span className="text-slate-500">Account Title:</span>
-                        <span className="font-bold text-slate-900">Ali Ahmed</span>
+                        <span className="font-bold text-slate-900">{activeCourseAccounts.JazzCash.title}</span>
                       </div>
                       <div className="flex justify-between items-center">
                         <span className="text-slate-500">JazzCash Number:</span>
                         <div className="flex items-center gap-1.5 font-mono font-bold text-brand-600">
-                          <span>0303-4581115</span>
+                          <span>{activeCourseAccounts.JazzCash.number}</span>
                           <button
                             type="button"
-                            onClick={() => handleCopy("03034581115", "jazzcash")}
+                            onClick={() => handleCopy(activeCourseAccounts.JazzCash.number, "jazzcash")}
                             className="p-1 rounded hover:bg-slate-100 text-slate-400 hover:text-slate-700 cursor-pointer"
                             title="Copy number"
                           >
@@ -782,15 +927,15 @@ export default function CourseDetailsPage() {
                     <div className="bg-white p-3 rounded-xl border border-slate-200 space-y-1.5 text-xs">
                       <div className="flex justify-between items-center">
                         <span className="text-slate-500">Account Title:</span>
-                        <span className="font-bold text-slate-900">Shazia Khalil</span>
+                        <span className="font-bold text-slate-900">{activeCourseAccounts.OPay.title}</span>
                       </div>
                       <div className="flex justify-between items-center">
                         <span className="text-slate-500">OPay Number:</span>
                         <div className="flex items-center gap-1.5 font-mono font-bold text-brand-600">
-                          <span>0324-4973465</span>
+                          <span>{activeCourseAccounts.OPay.number}</span>
                           <button
                             type="button"
-                            onClick={() => handleCopy("03244973465", "opay")}
+                            onClick={() => handleCopy(activeCourseAccounts.OPay.number, "opay")}
                             className="p-1 rounded hover:bg-slate-100 text-slate-400 hover:text-slate-700 cursor-pointer"
                             title="Copy number"
                           >
@@ -808,15 +953,15 @@ export default function CourseDetailsPage() {
                     <div className="bg-white p-3 rounded-xl border border-slate-200 space-y-1.5 text-xs">
                       <div className="flex justify-between items-center">
                         <span className="text-slate-500">Account Title:</span>
-                        <span className="font-bold text-slate-900">Ali Ahmed</span>
+                        <span className="font-bold text-slate-900">{activeCourseAccounts.Easypaisa.title}</span>
                       </div>
                       <div className="flex justify-between items-center">
                         <span className="text-slate-500">Easypaisa Number:</span>
                         <div className="flex items-center gap-1.5 font-mono font-bold text-brand-600">
-                          <span>0303-4581115</span>
+                          <span>{activeCourseAccounts.Easypaisa.number}</span>
                           <button
                             type="button"
-                            onClick={() => handleCopy("03034581115", "easypaisa")}
+                            onClick={() => handleCopy(activeCourseAccounts.Easypaisa.number, "easypaisa")}
                             className="p-1 rounded hover:bg-slate-100 text-slate-400 hover:text-slate-700 cursor-pointer"
                             title="Copy number"
                           >
@@ -834,21 +979,21 @@ export default function CourseDetailsPage() {
                     <div className="bg-white p-3 rounded-xl border border-slate-200 space-y-1.5 text-xs">
                       <div className="flex justify-between items-center">
                         <span className="text-slate-500">Bank:</span>
-                        <span className="font-bold text-slate-900">Meezan Bank</span>
+                        <span className="font-bold text-slate-900">{activeCourseAccounts.BankTransfer.bankName}</span>
                       </div>
                       <div className="flex justify-between items-center">
                         <span className="text-slate-500">Account Title:</span>
-                        <span className="font-bold text-slate-900">Adverty X Digital Services</span>
+                        <span className="font-bold text-slate-900">{activeCourseAccounts.BankTransfer.accountTitle}</span>
                       </div>
                       <div className="flex justify-between items-center">
-                        <span className="text-slate-500">IBAN / Acc #:</span>
+                        <span className="text-slate-500">Account #:</span>
                         <div className="flex items-center gap-1.5 font-mono font-bold text-brand-600">
-                          <span>02010108821992</span>
+                          <span>{activeCourseAccounts.BankTransfer.accountNumber}</span>
                           <button
                             type="button"
-                            onClick={() => handleCopy("02010108821992", "bank")}
+                            onClick={() => handleCopy(activeCourseAccounts.BankTransfer.accountNumber, "bank")}
                             className="p-1 rounded hover:bg-slate-100 text-slate-400 hover:text-slate-700"
-                            title="Copy IBAN"
+                            title="Copy account number"
                           >
                             <Copy className="w-3.5 h-3.5" />
                           </button>

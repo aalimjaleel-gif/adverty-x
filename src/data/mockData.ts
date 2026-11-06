@@ -141,6 +141,37 @@ export const AGENCY_SERVICES: ServiceItem[] = [
   },
 ];
 
+export interface VendorPaymentAccount {
+  number: string;
+  formattedNumber?: string;
+  title: string;
+}
+
+export interface VendorPaymentDetails {
+  isPartner?: boolean;
+  vendorName: string; // e.g. "Adverty X Official" or "Partner Usman"
+  vendorWhatsApp?: string; // e.g. "03275991628"
+  vendorEmail?: string;
+  JazzCash?: VendorPaymentAccount;
+  OPay?: VendorPaymentAccount;
+  Easypaisa?: VendorPaymentAccount;
+  BankTransfer?: {
+    bankName: string;
+    accountTitle: string;
+    accountNumber: string;
+  };
+}
+
+export interface CoursePricingTier {
+  id: "1month" | "lifetime" | "trial" | string;
+  name: string; // "1 Month Access" or "Lifetime Full Access"
+  duration: string; // "30 Days Access" vs "Lifetime Permanent"
+  priceUSD: number; // e.g. 3 vs 6
+  pricePKR: number; // e.g. 850 vs 1700
+  badge?: string; // "Trial Plan" or "Best Value"
+  description?: string;
+}
+
 export interface AppSubscriptionItem {
   id: string;
   name: string;
@@ -158,6 +189,7 @@ export interface AppSubscriptionItem {
   iconType: "capcut" | "netflix" | "youtube" | "surfshark" | "canva" | "chatgpt" | "spotify" | "adobe" | "prime" | string;
   description: string;
   fulfillmentType: "Instant Account Credentials" | "Private Screen Profile" | "Customer Email Activation" | string;
+  vendor?: VendorPaymentDetails;
 }
 
 export const APP_SUBSCRIPTIONS: AppSubscriptionItem[] = [
@@ -427,6 +459,8 @@ export interface CourseItem {
     module: string;
     lessons: LessonItem[];
   }[];
+  pricingTiers?: CoursePricingTier[];
+  vendor?: VendorPaymentDetails;
 }
 
 export const ACADEMY_COURSES: CourseItem[] = [

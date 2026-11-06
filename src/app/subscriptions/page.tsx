@@ -115,12 +115,54 @@ export default function SubscriptionsPage() {
     ? products
     : products.filter((item) => (item.category || "").toUpperCase().trim() === selectedCategory.toUpperCase().trim());
 
-  const paymentAccounts = {
+  const officialPaymentAccounts = {
     JazzCash: { number: "03034581115", formattedNumber: "0303-4581115", title: "Ali Ahmed", type: "JazzCash Mobile Account" },
     OPay: { number: "03244973465", formattedNumber: "0324-4973465", title: "Shazia Khalil", type: "OPay Wallet Account" },
     Easypaisa: { number: "03034581115", formattedNumber: "0303-4581115", title: "Ali Ahmed", type: "Easypaisa Account" },
     "Bank Transfer": { number: "PK92MEZN01020105892100", formattedNumber: "PK92 MEZN 0102 0105 8921 00", title: "Adverty X Digital Services", type: "Meezan Bank IBAN" },
   };
+
+  const isPartnerProduct = Boolean(
+    orderingItem?.vendor?.isPartner || 
+    (orderingItem?.vendor?.vendorName && orderingItem.vendor.vendorName !== "Adverty X (Official)")
+  );
+
+  const paymentAccounts = {
+    JazzCash: (isPartnerProduct && orderingItem?.vendor?.JazzCash?.number)
+      ? {
+          number: orderingItem.vendor.JazzCash.number,
+          formattedNumber: orderingItem.vendor.JazzCash.formattedNumber || orderingItem.vendor.JazzCash.number,
+          title: orderingItem.vendor.JazzCash.title || orderingItem.vendor.vendorName,
+          type: "JazzCash Mobile Account"
+        }
+      : officialPaymentAccounts.JazzCash,
+    OPay: (isPartnerProduct && orderingItem?.vendor?.OPay?.number)
+      ? {
+          number: orderingItem.vendor.OPay.number,
+          formattedNumber: orderingItem.vendor.OPay.formattedNumber || orderingItem.vendor.OPay.number,
+          title: orderingItem.vendor.OPay.title || orderingItem.vendor.vendorName,
+          type: "OPay Wallet Account"
+        }
+      : officialPaymentAccounts.OPay,
+    Easypaisa: (isPartnerProduct && orderingItem?.vendor?.Easypaisa?.number)
+      ? {
+          number: orderingItem.vendor.Easypaisa.number,
+          formattedNumber: orderingItem.vendor.Easypaisa.formattedNumber || orderingItem.vendor.Easypaisa.number,
+          title: orderingItem.vendor.Easypaisa.title || orderingItem.vendor.vendorName,
+          type: "Easypaisa Account"
+        }
+      : officialPaymentAccounts.Easypaisa,
+    "Bank Transfer": (isPartnerProduct && orderingItem?.vendor?.BankTransfer?.accountNumber)
+      ? {
+          number: orderingItem.vendor.BankTransfer.accountNumber,
+          formattedNumber: orderingItem.vendor.BankTransfer.accountNumber,
+          title: orderingItem.vendor.BankTransfer.accountTitle,
+          type: `${orderingItem.vendor.BankTransfer.bankName || "Bank"} Account`
+        }
+      : officialPaymentAccounts["Bank Transfer"],
+  };
+
+  const hasPartnerEasypaisa = Boolean(isPartnerProduct && orderingItem?.vendor?.Easypaisa?.number);
 
   const handleCopy = (text: string, key: string) => {
     navigator.clipboard.writeText(text);
@@ -176,6 +218,7 @@ export default function SubscriptionsPage() {
       type: "subscription",
       tid: isFree ? "FREE-ACCESS" : (tid || `TRX-${Date.now().toString().slice(-6)}`),
       paymentMethod: isFree ? "100% Free Promotion" : paymentMethod,
+      vendorName: isPartnerProduct ? orderingItem.vendor?.vendorName : "Adverty X Official",
       screenshotUrl: screenshotUrl || undefined,
       screenshotName: screenshotName || undefined,
       deliveryGuaranteedWithin: "12 Hours"
@@ -361,7 +404,7 @@ export default function SubscriptionsPage() {
                 </p>
                 <div className="pt-3 flex flex-col gap-2.5">
                   <a
-                    href={`https://wa.me/923275991628?text=${encodeURIComponent(
+                    href={`https://wa.me/${(isPartnerProduct && orderingItem?.vendor?.vendorWhatsApp) ? orderingItem.vendor.vendorWhatsApp.replace(/\D/g, "") : "923275991628"}?text=${encodeURIComponent(
                       orderingItem.pricePKR === 0
                         ? `Assalam o Alaikum! I claimed 100% FREE access for ${orderingItem.name}. My WhatsApp is ${customerContact}. Please share my credentials.`
                         : `Assalam o Alaikum! I submitted payment for ${orderQty > 1 ? `${orderQty} accounts of ` : ""}${orderingItem.name}. My WhatsApp is ${customerContact} and TID is ${tid}.`
@@ -371,7 +414,11 @@ export default function SubscriptionsPage() {
                     className="w-full py-3.5 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold flex items-center justify-center gap-2 shadow-sm"
                   >
                     <MessageCircle className="w-4 h-4" />
-                    <span>Open WhatsApp (0327-5991628) for Instant Delivery</span>
+                    <span>
+                      {isPartnerProduct && orderingItem?.vendor?.vendorWhatsApp
+                        ? `Open Partner WhatsApp (${orderingItem.vendor.vendorWhatsApp}) for Instant Delivery`
+                        : "Open WhatsApp (0327-5991628) for Instant Delivery"}
+                    </span>
                   </a>
                   <a
                     href="/profile"
@@ -559,6 +606,32 @@ export default function SubscriptionsPage() {
                       )}
                     </div>
 
+                    {/* Multi-Vendor Ownership Banner */}
+                    {isPartnerProduct ? (
+                      <div className="p-3 rounded-2xl bg-purple-50 border border-purple-200 text-xs space-y-1">
+                        <div className="flex items-center justify-between">
+                          <span className="font-extrabold text-purple-950 flex items-center gap-1.5">
+                            <span className="w-2 h-2 rounded-full bg-purple-600 animate-pulse"></span>
+                            Partner Product: {orderingItem.vendor?.vendorName}
+                          </span>
+                          <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-purple-200 text-purple-900">
+                            Partner Payment
+                          </span>
+                        </div>
+                        <p className="text-[11px] text-purple-800 leading-relaxed">
+                          This product is provided by partner <strong>{orderingItem.vendor?.vendorName}</strong>. The payment details below belong directly to this partner.
+                        </p>
+                      </div>
+                    ) : (
+                      <div className="p-2.5 rounded-xl bg-blue-50/70 border border-blue-200 text-xs flex items-center justify-between">
+                        <div className="flex items-center gap-2 text-blue-950 font-bold text-[11px]">
+                          <span className="w-2 h-2 rounded-full bg-blue-600"></span>
+                          <span>Official Adverty X Store (Direct Central Delivery)</span>
+                        </div>
+                        <span className="text-[10px] text-blue-700 font-bold">24/7 Verified</span>
+                      </div>
+                    )}
+
                     {/* Step 2: Payment Method Selection */}
                     <div>
                       <div className="flex items-center justify-between mb-2">
@@ -566,15 +639,15 @@ export default function SubscriptionsPage() {
                           Step 2: Choose Payment Account
                         </span>
                         <span className="text-[10px] text-slate-400">
-                          JazzCash & OPay Active
+                          {isPartnerProduct ? `${orderingItem.vendor?.vendorName} Accounts` : "JazzCash & OPay Active"}
                         </span>
                       </div>
                       <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                         {[
                           { key: "JazzCash" as const, label: "JazzCash", isComingSoon: false },
-                          { key: "OPay" as const, label: "OPay", isComingSoon: false },
-                          { key: "Easypaisa" as const, label: "Easypaisa", isComingSoon: true },
-                          { key: "Bank Transfer" as const, label: "Meezan Bank", isComingSoon: true }
+                          { key: "OPay" as const, label: "OPay", isComingSoon: isPartnerProduct && !orderingItem?.vendor?.OPay?.number },
+                          { key: "Easypaisa" as const, label: "Easypaisa", isComingSoon: !hasPartnerEasypaisa },
+                          { key: "Bank Transfer" as const, label: "Meezan Bank", isComingSoon: !(isPartnerProduct && orderingItem?.vendor?.BankTransfer?.accountNumber) }
                         ].map((m) => {
                           const isSelected = paymentMethod === m.key;
                           if (m.isComingSoon) {

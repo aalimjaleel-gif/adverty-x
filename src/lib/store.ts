@@ -4,7 +4,9 @@ import {
   AGENCY_SERVICES,
   CourseItem, 
   AppSubscriptionItem, 
-  ServiceItem 
+  ServiceItem,
+  VendorPaymentDetails,
+  CoursePricingTier
 } from "@/data/mockData";
 
 export interface OrderItem {
@@ -19,6 +21,8 @@ export interface OrderItem {
   type: "subscription" | "course" | "service";
   tid?: string;
   paymentMethod?: string;
+  vendorName?: string;
+  planDuration?: string; // e.g. "1 Month Access" or "Lifetime Access"
   screenshotUrl?: string; // Payment proof screenshot (ss)
   screenshotName?: string;
   deliveryGuaranteedWithin?: string; // e.g. "Within 12 Hours"
