@@ -1,5 +1,23 @@
 [
   {
+    "id": "app-2",
+    "name": "Capcut Pro (Laptop/PC)",
+    "slug": "capcut-pro-pc",
+    "category": "DESIGN & EDIT",
+    "typeBadge": "1 Month • Private",
+    "warrantyBadge": "28-day warranty",
+    "rating": 4.8,
+    "reviewsCount": 2511,
+    "pricePKR": 600,
+    "priceUSD": 2.15,
+    "internalCostPKR": 350,
+    "inStock": false,
+    "iconBg": "bg-white",
+    "iconType": "capcut",
+    "description": "Windows & Mac desktop Pro edition with full auto-captions, keyframe animation, optical flow, and multi-track video editing.",
+    "fulfillmentType": "Instant Account Credentials"
+  },
+  {
     "id": "app-1",
     "name": "Capcut Pro (Android/iPhone)",
     "slug": "capcut-pro-mobile",
