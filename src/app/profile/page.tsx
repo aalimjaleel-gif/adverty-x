@@ -31,6 +31,8 @@ import {
   addPayoutRequest,
   PayoutRequest,
   getAuthenticatedUser,
+  getStoredPartners,
+  loginPartner,
   logoutAll,
   isAdminAuthenticated
 } from "@/lib/store";
@@ -41,8 +43,9 @@ export default function UserProfilePage() {
     name: "Customer Account",
     email: "customer@example.com",
     joinedDate: "October 2026",
-    role: "Verified Client & Partner",
-    isAdmin: false
+    role: "Verified Client",
+    isAdmin: false,
+    isPartner: false
   });
 
   const [orders, setOrders] = useState<OrderItem[]>([]);
@@ -82,12 +85,20 @@ export default function UserProfilePage() {
       window.location.href = "/login";
       return;
     }
+    const partners = getStoredPartners();
+    const isPartner = !!authUser.isPartner || authUser.role === "Partner Vendor" || !!partners.find(p => p.email.toLowerCase() === authUser.email.toLowerCase());
+    if (isPartner) {
+      const partnerData = partners.find(p => p.email.toLowerCase() === authUser.email.toLowerCase());
+      if (partnerData) loginPartner(partnerData);
+    }
+
     setUser({
       name: authUser.name,
       email: authUser.email,
       joinedDate: authUser.joinedDate || "October 2026",
-      role: authUser.role || (authUser.isAdmin ? "Master Administrator" : "Verified Client & Partner"),
-      isAdmin: !!authUser.isAdmin
+      role: isPartner ? "Partner Vendor" : (authUser.role || (authUser.isAdmin ? "Master Administrator" : "Verified Client")),
+      isAdmin: !!authUser.isAdmin,
+      isPartner
     });
 
     // 2. Load orders filtered for this specific customer (or all if admin)
@@ -243,6 +254,35 @@ export default function UserProfilePage() {
               className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-brand-600 hover:bg-brand-500 text-white font-bold text-xs shadow-lg shadow-brand-600/30 transition-all flex-shrink-0 active:scale-95"
             >
               <span>Open Master Control Panel</span>
+              <ArrowRight className="w-4 h-4" />
+            </a>
+          </div>
+        )}
+
+        {/* Partner Studio Quick Access Banner */}
+        {user.isPartner && (
+          <div className="mb-6 p-4 sm:p-5 rounded-2xl bg-gradient-to-r from-purple-900 via-indigo-950 to-slate-900 border border-purple-500/40 shadow-lg flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 animate-in fade-in">
+            <div className="flex items-center gap-3">
+              <div className="w-11 h-11 rounded-xl bg-gradient-to-tr from-purple-600 to-indigo-600 text-white flex items-center justify-center font-bold flex-shrink-0 shadow-md">
+                <Sparkles className="w-5 h-5 text-amber-300" />
+              </div>
+              <div>
+                <div className="flex items-center gap-2">
+                  <h2 className="text-sm font-black text-white">Partner Vendor Studio Access</h2>
+                  <span className="px-2 py-0.5 rounded-full bg-purple-500/30 text-purple-300 text-[10px] font-bold border border-purple-500/40">
+                    Vendor Partner
+                  </span>
+                </div>
+                <p className="text-xs text-purple-200 mt-0.5">
+                  Aapka Partner Studio active hai! Apne products add karein, themes aur payment numbers set karein aur customer orders deliver karein.
+                </p>
+              </div>
+            </div>
+            <a
+              href="/partner"
+              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white font-bold text-xs shadow-lg transition-all flex-shrink-0 active:scale-95 whitespace-nowrap cursor-pointer"
+            >
+              <span>Open Partner Studio</span>
               <ArrowRight className="w-4 h-4" />
             </a>
           </div>

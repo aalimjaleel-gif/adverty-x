@@ -27,6 +27,9 @@ import {
 import { 
   PartnerVendor, 
   getActivePartnerSession, 
+  loginPartner,
+  getStoredPartners,
+  getAuthenticatedUser,
   savePartner, 
   logoutPartner,
   getStoredSubscriptions,
@@ -108,7 +111,19 @@ export default function PartnerStudioPage() {
   };
 
   useEffect(() => {
-    const session = getActivePartnerSession();
+    let session = getActivePartnerSession();
+    if (!session) {
+      // Auto-fallback: check if active client user is a registered partner!
+      const authUser = getAuthenticatedUser();
+      if (authUser && authUser.email) {
+        const partners = getStoredPartners();
+        const found = partners.find(p => p.email.toLowerCase() === authUser.email.toLowerCase());
+        if (found) {
+          loginPartner(found);
+          session = found;
+        }
+      }
+    }
     if (!session) {
       window.location.href = "/login?redirect=/partner";
       return;

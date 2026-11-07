@@ -88,7 +88,26 @@ let inMemoryCourses: CourseItem[] = [...ACADEMY_COURSES];
 let inMemorySubscriptions: AppSubscriptionItem[] = [...APP_SUBSCRIPTIONS];
 let inMemoryServices: ServiceItem[] = [...AGENCY_SERVICES];
 let inMemoryOrders: OrderItem[] = []; // ZERO demo customers by default
-let inMemoryPartners: PartnerVendor[] = [];
+const DEFAULT_INITIAL_PARTNERS: PartnerVendor[] = [
+  {
+    id: "partner-1730940000000",
+    name: "Muhammad Usama",
+    email: "533884h@gmail.com",
+    password: "Partner123!",
+    phone: "03044481402",
+    storeName: "Pro seller",
+    tagline: "Verified Reseller Store",
+    themeColor: "purple",
+    status: "Active",
+    joinedDate: "November 2026",
+    paymentDetails: {
+      JazzCash: { number: "03044481402", title: "Muhammad Usama" },
+      Easypaisa: { number: "03044481402", title: "Muhammad Usama" }
+    }
+  }
+];
+
+let inMemoryPartners: PartnerVendor[] = [...DEFAULT_INITIAL_PARTNERS];
 let inMemoryReferralSettings: ReferralCommissionSettings = {
   courseEnrollmentPKR: 20,
   appSubscriptionPKR: 10,
@@ -130,6 +149,7 @@ export interface UserProfile {
   joinedDate?: string;
   role: string;
   isAdmin?: boolean;
+  isPartner?: boolean;
   provider?: string;
   phone?: string;
 }
@@ -260,12 +280,69 @@ export function authenticateWithPassword(email: string, password: string): {
 // PARTNER VENDOR STORAGE & PERMISSIONS ENGINE
 // ============================================================================
 
+let hasFetchedServerPartners = false;
+
+export async function fetchPartnersFromServer(): Promise<PartnerVendor[]> {
+  try {
+    const res = await fetch("/api/partners", { cache: "no-store" });
+    let serverPartners: PartnerVendor[] = [];
+    if (res.ok) {
+      try {
+        serverPartners = await res.json();
+      } catch (e) {}
+    }
+    let localPartners: PartnerVendor[] = [];
+    if (typeof window !== "undefined") {
+      try {
+        const raw = localStorage.getItem(PARTNERS_STORAGE_KEY);
+        if (raw) localPartners = JSON.parse(raw);
+      } catch (e) {}
+    }
+    const map = new Map<string, PartnerVendor>();
+    DEFAULT_INITIAL_PARTNERS.forEach(p => map.set(p.email.toLowerCase(), p));
+    if (Array.isArray(serverPartners)) {
+      serverPartners.forEach(p => map.set(p.email.toLowerCase(), p));
+    }
+    if (Array.isArray(localPartners)) {
+      localPartners.forEach(p => map.set(p.email.toLowerCase(), p));
+    }
+    const merged = Array.from(map.values());
+    inMemoryPartners = merged;
+    if (typeof window !== "undefined") {
+      localStorage.setItem(PARTNERS_STORAGE_KEY, JSON.stringify(merged));
+      window.dispatchEvent(new Event("advertyx_partners_updated"));
+    }
+    return merged;
+  } catch (err) {
+    return inMemoryPartners;
+  }
+}
+
 export function getStoredPartners(): PartnerVendor[] {
   if (typeof window === "undefined") return inMemoryPartners;
+  if (!hasFetchedServerPartners) {
+    hasFetchedServerPartners = true;
+    fetchPartnersFromServer();
+  }
   try {
     const raw = localStorage.getItem(PARTNERS_STORAGE_KEY);
-    if (!raw) return inMemoryPartners;
-    return JSON.parse(raw);
+    if (!raw) {
+      localStorage.setItem(PARTNERS_STORAGE_KEY, JSON.stringify(DEFAULT_INITIAL_PARTNERS));
+      inMemoryPartners = DEFAULT_INITIAL_PARTNERS;
+      return DEFAULT_INITIAL_PARTNERS;
+    }
+    const parsed = JSON.parse(raw);
+    if (Array.isArray(parsed) && parsed.length > 0) {
+      const map = new Map<string, PartnerVendor>();
+      DEFAULT_INITIAL_PARTNERS.forEach(p => map.set(p.email.toLowerCase(), p));
+      parsed.forEach((p: PartnerVendor) => {
+        if (p && p.email) map.set(p.email.toLowerCase(), p);
+      });
+      const combined = Array.from(map.values());
+      inMemoryPartners = combined;
+      return combined;
+    }
+    return inMemoryPartners;
   } catch (e) {
     return inMemoryPartners;
   }
@@ -285,6 +362,13 @@ export function savePartner(partner: PartnerVendor): PartnerVendor[] {
   if (typeof window !== "undefined") {
     localStorage.setItem(PARTNERS_STORAGE_KEY, JSON.stringify(updated));
     window.dispatchEvent(new Event("advertyx_partners_updated"));
+    
+    // Sync to Server API so it's permanently stored across all devices & Vercel
+    fetch("/api/partners", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(partner)
+    }).catch(e => console.error("Server partner sync error:", e));
   }
   return updated;
 }
@@ -296,6 +380,10 @@ export function deletePartner(id: string): PartnerVendor[] {
   if (typeof window !== "undefined") {
     localStorage.setItem(PARTNERS_STORAGE_KEY, JSON.stringify(updated));
     window.dispatchEvent(new Event("advertyx_partners_updated"));
+
+    fetch(`/api/partners?id=${encodeURIComponent(id)}`, {
+      method: "DELETE"
+    }).catch(e => console.error("Server partner delete error:", e));
   }
   return updated;
 }
@@ -307,6 +395,14 @@ export function updatePartnerStatus(id: string, status: "Active" | "Suspended"):
   if (typeof window !== "undefined") {
     localStorage.setItem(PARTNERS_STORAGE_KEY, JSON.stringify(updated));
     window.dispatchEvent(new Event("advertyx_partners_updated"));
+    const updatedPartner = updated.find(p => p.id === id);
+    if (updatedPartner) {
+      fetch("/api/partners", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(updatedPartner)
+      }).catch(e => console.error("Server partner status error:", e));
+    }
   }
   return updated;
 }
@@ -326,6 +422,7 @@ export function loginPartner(partner: PartnerVendor): void {
   if (typeof window !== "undefined") {
     localStorage.setItem(PARTNER_SESSION_KEY, JSON.stringify(partner));
     window.dispatchEvent(new Event("advertyx_partner_session_changed"));
+    window.dispatchEvent(new Event("advertyx_auth_changed"));
   }
 }
 
@@ -333,16 +430,49 @@ export function logoutPartner(): void {
   if (typeof window !== "undefined") {
     localStorage.removeItem(PARTNER_SESSION_KEY);
     window.dispatchEvent(new Event("advertyx_partner_session_changed"));
+    window.dispatchEvent(new Event("advertyx_auth_changed"));
   }
 }
 
 export function authenticateWithGoogle(email: string, name?: string): UserProfile {
   const cleanEmail = email.trim().toLowerCase();
+
+  // 1. Super Admin bypass (Adverty X Owner)
+  if (cleanEmail === "admin@advertyx.com" || cleanEmail === "advertyx.info@gmail.com") {
+    loginAdmin();
+    const adminUser: UserProfile = {
+      name: "Adverty X Super Admin",
+      email: cleanEmail,
+      joinedDate: "October 2026",
+      role: "Master Administrator",
+      isAdmin: true
+    };
+    loginClient(adminUser);
+    return adminUser;
+  }
+
+  // 2. Registered Partner Vendor bypass
+  const partners = getStoredPartners();
+  const foundPartner = partners.find(p => p.email.toLowerCase() === cleanEmail);
+  if (foundPartner) {
+    loginPartner(foundPartner);
+    const partnerUser: UserProfile = {
+      name: foundPartner.name,
+      email: foundPartner.email,
+      joinedDate: foundPartner.joinedDate || "October 2026",
+      role: "Partner Vendor",
+      isAdmin: false,
+      isPartner: true,
+      phone: foundPartner.phone
+    };
+    loginClient(partnerUser);
+    return partnerUser;
+  }
+
+  // 3. Existing Registered Customer - retain past orders & history!
   const users = getRegisteredUsers();
   const found = users.find(u => u.email.toLowerCase() === cleanEmail);
-
   if (found) {
-    // Existing account found - retain their exact profile and previous orders!
     const profile: UserProfile = {
       name: found.name || name || cleanEmail.split("@")[0],
       email: found.email,
@@ -356,7 +486,7 @@ export function authenticateWithGoogle(email: string, name?: string): UserProfil
     return profile;
   }
 
-  // Brand new Google user
+  // 4. Brand new Google client
   const newUser: RegisteredUser = {
     name: name?.trim() || cleanEmail.split("@")[0].replace(/[._]/g, " "),
     email: cleanEmail,
@@ -400,9 +530,34 @@ export function getAuthenticatedUser(): UserProfile | null {
     return adminUser;
   }
 
+  // Check active partner session
+  const activePartner = getActivePartnerSession();
+  if (activePartner) {
+    return {
+      name: activePartner.name,
+      email: activePartner.email,
+      joinedDate: activePartner.joinedDate || "October 2026",
+      role: "Partner Vendor",
+      isAdmin: false,
+      isPartner: true,
+      phone: activePartner.phone
+    };
+  }
+
   if (!raw) return null;
   try {
-    return JSON.parse(raw);
+    const parsed: UserProfile = JSON.parse(raw);
+    const partners = getStoredPartners();
+    const isPartnerUser = partners.find(p => p.email.toLowerCase() === parsed.email.toLowerCase());
+    if (isPartnerUser) {
+      loginPartner(isPartnerUser);
+      return {
+        ...parsed,
+        role: "Partner Vendor",
+        isPartner: true
+      };
+    }
+    return parsed;
   } catch (e) {
     return null;
   }

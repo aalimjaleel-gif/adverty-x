@@ -10,6 +10,7 @@ import {
   authenticateWithPassword,
   authenticateWithGoogle,
   getRegisteredUsers,
+  getStoredPartners,
   RegisteredUser
 } from "@/lib/store";
 
@@ -23,6 +24,7 @@ export default function LoginPage() {
   const [isGoogleModalOpen, setIsGoogleModalOpen] = useState(false);
   const [googleName, setGoogleName] = useState("");
   const [googleEmail, setGoogleEmail] = useState("");
+  const [googlePassword, setGooglePassword] = useState("");
   const [savedAccounts, setSavedAccounts] = useState<RegisteredUser[]>([]);
 
   const [isGithubModalOpen, setIsGithubModalOpen] = useState(false);
@@ -68,7 +70,7 @@ export default function LoginPage() {
       return;
     }
 
-    if (authRes.isPartner) {
+    if (authRes.isPartner || authRes.user?.isPartner || authRes.user?.role === "Partner Vendor") {
       window.location.href = "/partner";
       return;
     }
@@ -88,29 +90,29 @@ export default function LoginPage() {
     const cleanEmail = googleEmail.trim().toLowerCase();
     const cleanName = googleName.trim() || cleanEmail.split("@")[0].replace(/[._]/g, " ");
 
-    // Check if Super Admin
-    if (cleanEmail === "admin@advertyx.com" || cleanEmail === "advertyx.info@gmail.com") {
-      authenticateWithPassword(cleanEmail, "AdminPassword123!");
+    const profile = authenticateWithGoogle(cleanEmail, cleanName);
+
+    // If user provided an optional password, persist it so they can log in via standard email/password form anytime!
+    if (googlePassword.trim()) {
+      const users = getRegisteredUsers();
+      const idx = users.findIndex(u => u.email.toLowerCase() === cleanEmail);
+      if (idx >= 0) {
+        users[idx].password = googlePassword.trim();
+        localStorage.setItem("advertyx_registered_users", JSON.stringify(users));
+      }
+    }
+
+    setIsGoogleModalOpen(false);
+
+    if (profile.isAdmin) {
       window.location.href = "/admin";
       return;
     }
 
-    // Check if Partner Vendor
-    const partners = typeof window !== "undefined" ? JSON.parse(localStorage.getItem("advertyx_partners_data") || "[]") : [];
-    const foundPartner = partners.find((p: any) => p.email.toLowerCase() === cleanEmail);
-    if (foundPartner) {
-      if (foundPartner.status === "Suspended") {
-        alert("Your partner account is suspended by the Super Administrator.");
-        return;
-      }
-      localStorage.setItem("advertyx_active_partner", JSON.stringify(foundPartner));
-      authenticateWithGoogle(cleanEmail, cleanName);
+    if (profile.isPartner || profile.role === "Partner Vendor") {
       window.location.href = "/partner";
       return;
     }
-
-    authenticateWithGoogle(cleanEmail, cleanName);
-    setIsGoogleModalOpen(false);
 
     const searchParams = new URLSearchParams(window.location.search);
     const redirectUrl = searchParams.get("redirect") || "/profile";
@@ -118,11 +120,18 @@ export default function LoginPage() {
   };
 
   const handleQuickSelectAccount = (account: RegisteredUser) => {
-    if (account.provider === "google") {
-      authenticateWithGoogle(account.email, account.name);
-    } else {
-      loginClient(account);
+    const cleanEmail = account.email.trim().toLowerCase();
+    const profile = authenticateWithGoogle(cleanEmail, account.name);
+    
+    if (profile.isAdmin) {
+      window.location.href = "/admin";
+      return;
     }
+    if (profile.isPartner || profile.role === "Partner Vendor") {
+      window.location.href = "/partner";
+      return;
+    }
+
     const searchParams = new URLSearchParams(window.location.search);
     const redirectUrl = searchParams.get("redirect") || "/profile";
     window.location.href = redirectUrl;
@@ -325,7 +334,7 @@ export default function LoginPage() {
             {savedAccounts.filter(a => a.email && !a.isAdmin).length > 0 && (
               <div className="mb-4 space-y-1.5">
                 <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">
-                  Previously Used on this Device
+                  Previously Used on this Device (1-Click Instant Sign-In)
                 </span>
                 <div className="space-y-1 max-h-36 overflow-y-auto">
                   {savedAccounts.filter(a => a.email && !a.isAdmin).map((acc) => (
@@ -351,19 +360,82 @@ export default function LoginPage() {
                   ))}
                 </div>
                 <div className="text-center my-2">
-                  <span className="text-[10px] text-slate-400">or enter another Gmail</span>
+                  <span className="text-[10px] text-slate-400">or enter another Google account</span>
                 </div>
               </div>
             )}
 
-            <form onSubmit={handleGoogleSubmit} className="space-y-4">
+            <form onSubmit={handleGoogleSubmit} className="space-y-3.5">
               <div>
                 <label className="block text-xs font-semibold text-slate-700 mb-1">
-                  Your Full Name
+                  Your Gmail / Google Email Address *
+                </label>
+                <input
+                  type="email"
+                  required
+                  placeholder="e.g. 533884h@gmail.com or usman@gmail.com"
+                  value={googleEmail}
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    setGoogleEmail(val);
+                    if (!googleName) {
+                      const derived = val.split("@")[0].replace(/[._]/g, " ");
+                      setGoogleName(derived);
+                    }
+                  }}
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs text-slate-900 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white font-medium"
+                />
+              </div>
+
+              {/* Dynamic Status Detection */}
+              {(() => {
+                const clean = googleEmail.trim().toLowerCase();
+                if (!clean) return null;
+                const partners = getStoredPartners();
+                const matchedP = partners.find(p => p.email.toLowerCase() === clean);
+                if (matchedP) {
+                  return (
+                    <div className="p-3 rounded-2xl bg-purple-50 border border-purple-200 text-purple-900 text-xs flex items-center gap-2.5 animate-in fade-in">
+                      <div className="w-7 h-7 rounded-lg bg-purple-600 text-white font-bold flex items-center justify-center text-xs flex-shrink-0">P</div>
+                      <div>
+                        <div className="font-bold">Partner Vendor: {matchedP.storeName || matchedP.name}</div>
+                        <div className="text-[11px] text-purple-700">Logging in directly into your Partner Studio (/partner)</div>
+                      </div>
+                    </div>
+                  );
+                }
+                if (clean === "admin@advertyx.com" || clean === "advertyx.info@gmail.com") {
+                  return (
+                    <div className="p-3 rounded-2xl bg-amber-50 border border-amber-200 text-amber-900 text-xs flex items-center gap-2.5 animate-in fade-in">
+                      <div className="w-7 h-7 rounded-lg bg-amber-600 text-white font-bold flex items-center justify-center text-xs flex-shrink-0">A</div>
+                      <div>
+                        <div className="font-bold">Master Administrator Recognized</div>
+                        <div className="text-[11px] text-amber-800">Logging into Master Control Panel (/admin)</div>
+                      </div>
+                    </div>
+                  );
+                }
+                const matchedU = savedAccounts.find(u => u.email.toLowerCase() === clean);
+                if (matchedU) {
+                  return (
+                    <div className="p-3 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-900 text-xs flex items-center gap-2 animate-in fade-in">
+                      <ShieldCheck className="w-5 h-5 text-emerald-600 flex-shrink-0" />
+                      <div>
+                        <div className="font-bold">Welcome Back, {matchedU.name}!</div>
+                        <div className="text-[11px] text-emerald-700">Your account and all previous purchases will restore automatically.</div>
+                      </div>
+                    </div>
+                  );
+                }
+                return null;
+              })()}
+
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 mb-1">
+                  Full Name (Optional)
                 </label>
                 <input
                   type="text"
-                  required
                   placeholder="e.g. Muhammad Usman"
                   value={googleName}
                   onChange={(e) => setGoogleName(e.target.value)}
@@ -372,35 +444,39 @@ export default function LoginPage() {
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">
-                  Your Gmail / Google Email Address *
-                </label>
+                <div className="flex justify-between items-center mb-1">
+                  <label className="block text-xs font-semibold text-slate-700">
+                    Account Password (Optional)
+                  </label>
+                  <span className="text-[10px] text-slate-400">For direct email/pass login</span>
+                </div>
                 <input
-                  type="email"
-                  required
-                  placeholder="e.g. usman.digital@gmail.com"
-                  value={googleEmail}
-                  onChange={(e) => setGoogleEmail(e.target.value)}
+                  type="password"
+                  placeholder="Optional: Set a password to also log in without Google"
+                  value={googlePassword}
+                  onChange={(e) => setGooglePassword(e.target.value)}
                   className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs text-slate-900 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white"
                 />
-                <span className="text-[10px] text-slate-400 mt-1 block">
-                  ✓ Your previous orders & credentials load automatically with this Gmail.
-                </span>
+              </div>
+
+              {/* Zero Data Loss Guarantee */}
+              <div className="p-3 rounded-xl bg-blue-50/70 border border-blue-100 text-[11px] text-blue-900 leading-relaxed">
+                🛡️ <strong>Zero Account Loss:</strong> Aapka Gmail hi aapka permanent ID hai. Agar aap logout bhi ho jate hain, dobara isi Gmail se sign-in karte hi aapke sabhi orders, purchases aur credentials profile me wapis mil jayenge.
               </div>
 
               <div className="pt-2 flex items-center justify-end gap-2">
                 <button
                   type="button"
                   onClick={() => setIsGoogleModalOpen(false)}
-                  className="px-4 py-2.5 rounded-xl border border-slate-200 hover:bg-slate-50 text-xs font-semibold text-slate-600"
+                  className="px-4 py-2.5 rounded-xl border border-slate-200 hover:bg-slate-50 text-xs font-semibold text-slate-600 cursor-pointer"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="px-6 py-2.5 rounded-xl bg-[#1a73e8] hover:bg-[#1557b0] text-white text-xs font-bold shadow-md transition-all flex items-center gap-1.5"
+                  className="px-6 py-2.5 rounded-xl bg-[#1a73e8] hover:bg-[#1557b0] text-white text-xs font-bold shadow-md transition-all flex items-center gap-1.5 cursor-pointer"
                 >
-                  <span>Continue as Google User</span>
+                  <span>Continue with Google</span>
                   <ArrowRight className="w-3.5 h-3.5" />
                 </button>
               </div>
