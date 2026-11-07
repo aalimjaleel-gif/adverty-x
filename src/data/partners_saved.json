@@ -1,7 +1,7 @@
 [
   {
-    "id": "partner-1794030198449",
-    "name": "Ismail",
+    "id": "partner-1730940000000",
+    "name": "Muhammad Usama",
     "email": "533884h@gmail.com",
     "password": "533884",
     "phone": "03044481402",
@@ -13,11 +13,11 @@
     "paymentDetails": {
       "JazzCash": {
         "number": "03044481402",
-        "title": "Ismail"
+        "title": "Muhammad Usama"
       },
       "Easypaisa": {
         "number": "03044481402",
-        "title": "Ismail"
+        "title": "Muhammad Usama"
       }
     }
   }
