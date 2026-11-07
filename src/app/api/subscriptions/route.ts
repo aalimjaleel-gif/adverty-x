@@ -15,31 +15,17 @@ const DATA_FILE = path.join(process.cwd(), "src", "data", "subscriptions_saved.j
 // In-memory cache for ultra-fast response on serverless lambdas
 let memorySubsCache: AppSubscriptionItem[] | null = null;
 let lastFetchTime = 0;
+let writeQueue: Promise<any> = Promise.resolve();
 
-// Read subscriptions safely
+// Read subscriptions safely (Priority: Fresh Cache -> GitHub Cloud Source of Truth -> Local File -> Static Mock)
 async function getSubscriptionsData(): Promise<AppSubscriptionItem[]> {
   const now = Date.now();
-  // Return memory cache if fresh (within 30 seconds)
-  if (memorySubsCache && memorySubsCache.length > 0 && now - lastFetchTime < 30000) {
+  // Return memory cache if fresh (within 10 seconds)
+  if (memorySubsCache && memorySubsCache.length > 0 && now - lastFetchTime < 10000) {
     return memorySubsCache;
   }
 
-  // 1. Try local filesystem (for local dev / build time)
-  try {
-    if (fs.existsSync(DATA_FILE)) {
-      const raw = fs.readFileSync(DATA_FILE, "utf-8");
-      const parsed: AppSubscriptionItem[] = JSON.parse(raw);
-      if (Array.isArray(parsed) && parsed.length > 0) {
-        memorySubsCache = parsed;
-        lastFetchTime = now;
-        return parsed;
-      }
-    }
-  } catch (e) {
-    // Filesystem read failed or read-only
-  }
-
-  // 2. Try GitHub contents API (for live Vercel deployments across all mobile & PC devices)
+  // 1. Always prioritize GitHub contents API so multiple PCs / mobile devices see live synced prices immediately!
   try {
     const ghRes = await fetch(`https://api.github.com/repos/${GITHUB_REPO}/contents/${GITHUB_FILE_PATH}`, {
       headers: {
@@ -58,6 +44,10 @@ async function getSubscriptionsData(): Promise<AppSubscriptionItem[]> {
         if (Array.isArray(parsed) && parsed.length > 0) {
           memorySubsCache = parsed;
           lastFetchTime = now;
+          // Sync local file if possible
+          try {
+            fs.writeFileSync(DATA_FILE, JSON.stringify(parsed, null, 2), "utf-8");
+          } catch (e) {}
           return parsed;
         }
       }
@@ -66,15 +56,89 @@ async function getSubscriptionsData(): Promise<AppSubscriptionItem[]> {
     console.error("GitHub API read error:", ghErr);
   }
 
-  // Fallback to static mock data
+  // 2. Fallback to local filesystem (if offline or GitHub API rate-limited)
+  try {
+    if (fs.existsSync(DATA_FILE)) {
+      const raw = fs.readFileSync(DATA_FILE, "utf-8");
+      const parsed: AppSubscriptionItem[] = JSON.parse(raw);
+      if (Array.isArray(parsed) && parsed.length > 0) {
+        memorySubsCache = parsed;
+        lastFetchTime = now;
+        return parsed;
+      }
+    }
+  } catch (e) {
+    // Filesystem read failed or read-only
+  }
+
+  // 3. Fallback to static mock data
   memorySubsCache = APP_SUBSCRIPTIONS;
   lastFetchTime = now;
   return APP_SUBSCRIPTIONS;
 }
 
-// Persist subscriptions to both local filesystem and GitHub API
+// GitHub PUT with retry logic to guarantee no 409 SHA conflict losses
+async function saveToGitHubWithRetry(subs: AppSubscriptionItem[], maxRetries = 3): Promise<boolean> {
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    try {
+      const getRes = await fetch(`https://api.github.com/repos/${GITHUB_REPO}/contents/${GITHUB_FILE_PATH}`, {
+        headers: {
+          Authorization: `Bearer ${GITHUB_TOKEN}`,
+          "User-Agent": "AdvertyX-App",
+          Accept: "application/vnd.github.v3+json",
+        },
+        cache: "no-store",
+      });
+
+      let currentSha: string | undefined = undefined;
+      if (getRes.ok) {
+        const currentData = await getRes.json();
+        currentSha = currentData.sha;
+      }
+
+      const jsonContent = JSON.stringify(subs, null, 2);
+      const base64Content = Buffer.from(jsonContent, "utf-8").toString("base64");
+
+      const putRes = await fetch(`https://api.github.com/repos/${GITHUB_REPO}/contents/${GITHUB_FILE_PATH}`, {
+        method: "PUT",
+        headers: {
+          Authorization: `Bearer ${GITHUB_TOKEN}`,
+          "User-Agent": "AdvertyX-App",
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          message: `Update subscriptions from Admin Panel [auto-sync] - ${new Date().toISOString()}`,
+          content: base64Content,
+          sha: currentSha,
+          branch: "main",
+        }),
+      });
+
+      if (putRes.ok) {
+        return true;
+      }
+
+      // If 409 Conflict occurred (e.g. concurrent price updates from another device/tab), wait and retry with latest SHA
+      if (putRes.status === 409 && attempt < maxRetries) {
+        await new Promise((resolve) => setTimeout(resolve, 500 * attempt));
+        continue;
+      }
+
+      const errText = await putRes.text();
+      console.error(`GitHub PUT failed (attempt ${attempt}):`, errText);
+    } catch (err) {
+      console.error(`GitHub API write attempt ${attempt} error:`, err);
+      if (attempt < maxRetries) {
+        await new Promise((resolve) => setTimeout(resolve, 500 * attempt));
+      }
+    }
+  }
+  return false;
+}
+
+// Persist subscriptions to both local filesystem and GitHub API sequentially
 async function persistSubscriptionsData(subs: AppSubscriptionItem[]): Promise<boolean> {
-  // Update in-memory cache immediately
+  // Update in-memory cache immediately so instant reads reflect new prices
   memorySubsCache = subs;
   lastFetchTime = Date.now();
 
@@ -85,47 +149,10 @@ async function persistSubscriptionsData(subs: AppSubscriptionItem[]): Promise<bo
     // Expected on Vercel read-only environment
   }
 
-  // 2. Persist to GitHub repository so all mobile devices & Vercel see it permanently
-  try {
-    // First get the latest file SHA from GitHub
-    const getRes = await fetch(`https://api.github.com/repos/${GITHUB_REPO}/contents/${GITHUB_FILE_PATH}`, {
-      headers: {
-        Authorization: `Bearer ${GITHUB_TOKEN}`,
-        "User-Agent": "AdvertyX-App",
-        Accept: "application/vnd.github.v3+json",
-      },
-      cache: "no-store",
-    });
-
-    let currentSha: string | undefined = undefined;
-    if (getRes.ok) {
-      const currentData = await getRes.json();
-      currentSha = currentData.sha;
-    }
-
-    const jsonContent = JSON.stringify(subs, null, 2);
-    const base64Content = Buffer.from(jsonContent, "utf-8").toString("base64");
-
-    const putRes = await fetch(`https://api.github.com/repos/${GITHUB_REPO}/contents/${GITHUB_FILE_PATH}`, {
-      method: "PUT",
-      headers: {
-        Authorization: `Bearer ${GITHUB_TOKEN}`,
-        "User-Agent": "AdvertyX-App",
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        message: "Update subscriptions from Admin Panel [auto-sync]",
-        content: base64Content,
-        sha: currentSha,
-        branch: "main",
-      }),
-    });
-
-    return putRes.ok;
-  } catch (ghErr) {
-    console.error("GitHub API write error:", ghErr);
-    return false;
-  }
+  // 2. Queue write tasks sequentially so concurrent saves never conflict with each other
+  const resultPromise = writeQueue.then(() => saveToGitHubWithRetry(subs)).catch(() => false);
+  writeQueue = resultPromise;
+  return resultPromise;
 }
 
 // GET /api/subscriptions
@@ -148,8 +175,8 @@ export async function POST(req: Request) {
       if (body.length === 0) {
         return NextResponse.json({ error: "Empty subscriptions list" }, { status: 400 });
       }
-      persistSubscriptionsData(body).catch((e) => console.error("Bulk persist error:", e));
-      return NextResponse.json({ success: true, count: body.length });
+      const ok = await persistSubscriptionsData(body);
+      return NextResponse.json({ success: ok, count: body.length });
     }
 
     const item: AppSubscriptionItem = body;
@@ -184,10 +211,10 @@ export async function POST(req: Request) {
       updated = [completeItem, ...current];
     }
 
-    // Persist to server & GitHub in background
-    persistSubscriptionsData(updated).catch((e) => console.error("Persist error:", e));
+    // Persist to server & GitHub sequentially
+    const ok = await persistSubscriptionsData(updated);
 
-    return NextResponse.json({ success: true, item: updated[0], total: updated.length });
+    return NextResponse.json({ success: ok, item: updated[0], total: updated.length });
   } catch (err) {
     console.error("Failed to save subscription:", err);
     return NextResponse.json({ error: "Failed to save subscription" }, { status: 500 });
@@ -205,9 +232,9 @@ export async function DELETE(req: Request) {
 
     const current = await getSubscriptionsData();
     const updated = current.filter((s) => s.id !== id);
-    persistSubscriptionsData(updated).catch((e) => console.error("Delete persist error:", e));
+    const ok = await persistSubscriptionsData(updated);
 
-    return NextResponse.json({ success: true, remaining: updated.length });
+    return NextResponse.json({ success: ok, remaining: updated.length });
   } catch (err) {
     console.error("Failed to delete subscription:", err);
     return NextResponse.json({ error: "Failed to delete subscription" }, { status: 500 });

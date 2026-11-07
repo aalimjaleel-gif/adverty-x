@@ -245,13 +245,21 @@ export default function UnifiedMasterPanel() {
   };
 
   // Stock toggle
-  const handleStockToggle = (id: string) => {
+  const handleStockToggle = async (id: string) => {
     const item = products.find(p => p.id === id);
     if (!item) return;
     const updated = { ...item, inStock: !item.inStock };
     const newList = updateSubscriptionItem(updated);
     setProducts(newList);
     showToast(`${item.name} is now ${updated.inStock ? "IN STOCK" : "OUT OF STOCK"}`);
+
+    try {
+      await fetch("/api/subscriptions", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(updated),
+      });
+    } catch (e) {}
   };
 
   // Edit subscription price
@@ -261,7 +269,7 @@ export default function UnifiedMasterPanel() {
     setEditCostPKR(item.internalCostPKR || 0);
   };
 
-  const handleSaveSubPrice = (id: string) => {
+  const handleSaveSubPrice = async (id: string) => {
     const item = products.find(p => p.id === id);
     if (!item) return;
     const numPrice = Number(editPricePKR);
@@ -275,7 +283,22 @@ export default function UnifiedMasterPanel() {
     const newList = updateSubscriptionItem(updated);
     setProducts(newList);
     setEditingSubId(null);
-    showToast(`Updated price for ${item.name}: ${validPrice === 0 ? "100% FREE (Rs 0)" : `Rs ${validPrice}`}`);
+    showToast(`Saving "${item.name}" (Rs ${validPrice}) to cloud...`);
+
+    try {
+      const res = await fetch("/api/subscriptions", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(updated),
+      });
+      if (res.ok) {
+        showToast(`✅ Synced to all devices! "${item.name}" is now Rs ${validPrice}.`);
+      } else {
+        showToast(`Saved locally for ${item.name}`);
+      }
+    } catch (e) {
+      showToast(`Saved locally for ${item.name}`);
+    }
   };
 
   // Open Add Subscription Modal
@@ -321,7 +344,7 @@ export default function UnifiedMasterPanel() {
   };
 
   // Save Subscription (Add or Edit)
-  const handleSaveSubscription = (e: React.FormEvent) => {
+  const handleSaveSubscription = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!subForm.name.trim()) {
       alert("Please enter the subscription or app name.");
@@ -359,14 +382,25 @@ export default function UnifiedMasterPanel() {
     if (editingSubItem) {
       const updatedList = updateSubscriptionItem(subItem);
       setProducts(updatedList);
-      showToast(`Updated "${subItem.name}" (${cleanPrice === 0 ? "100% FREE" : `Rs ${cleanPrice}`})!`);
+      showToast(`Saving "${subItem.name}" to cloud...`);
     } else {
       const updatedList = addSubscriptionItem(subItem);
       setProducts(updatedList);
-      showToast(`Added "${subItem.name}" (${cleanPrice === 0 ? "100% FREE" : `Rs ${cleanPrice}`})!`);
+      showToast(`Adding "${subItem.name}" to cloud...`);
     }
 
     setIsSubModalOpen(false);
+
+    try {
+      const res = await fetch("/api/subscriptions", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(subItem)
+      });
+      if (res.ok) {
+        showToast(`✅ "${subItem.name}" saved & synced to all devices!`);
+      }
+    } catch (e) {}
   };
 
   // Sync All Subscriptions to Cloud / GitHub / Mobile
@@ -391,11 +425,15 @@ export default function UnifiedMasterPanel() {
   };
 
   // Delete Subscription
-  const handleDeleteSubscription = (id: string, name: string) => {
+  const handleDeleteSubscription = async (id: string, name: string) => {
     if (confirm(`Are you sure you want to delete "${name}" from subscriptions?`)) {
       const updatedList = deleteSubscriptionItem(id);
       setProducts(updatedList);
-      showToast(`Deleted "${name}" from store.`);
+      showToast(`Deleting "${name}" from store...`);
+      try {
+        await fetch(`/api/subscriptions?id=${encodeURIComponent(id)}`, { method: "DELETE" });
+        showToast(`✅ "${name}" deleted & synced across all devices.`);
+      } catch (e) {}
     }
   };
 

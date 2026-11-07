@@ -474,7 +474,7 @@ let hasFetchedServerSubscriptions = false;
 
 export async function fetchSubscriptionsFromServer(): Promise<AppSubscriptionItem[]> {
   try {
-    const res = await fetch("/api/subscriptions", { cache: "no-store" });
+    const res = await fetch(`/api/subscriptions?_t=${Date.now()}`, { cache: "no-store" });
     let serverSubs: AppSubscriptionItem[] = [];
     if (res.ok) {
       try {
@@ -482,7 +482,12 @@ export async function fetchSubscriptionsFromServer(): Promise<AppSubscriptionIte
       } catch (e) {}
     }
 
-    // Read user's local subscriptions so newly added custom items are NEVER lost
+    if (!Array.isArray(serverSubs) || serverSubs.length === 0) {
+      const fallback = getStoredSubscriptions();
+      return fallback.length > 0 ? fallback : APP_SUBSCRIPTIONS;
+    }
+
+    // Read user's local subscriptions to check for brand-new items created offline
     let localSubs: AppSubscriptionItem[] = [];
     if (typeof window !== "undefined") {
       try {
@@ -491,9 +496,8 @@ export async function fetchSubscriptionsFromServer(): Promise<AppSubscriptionIte
       } catch (e) {}
     }
 
-    const baseList = Array.isArray(serverSubs) && serverSubs.length > 0 ? serverSubs : APP_SUBSCRIPTIONS;
-    const serverIdSet = new Set(baseList.map(s => s.id));
-    const serverSlugSet = new Set(baseList.map(s => s.slug));
+    const serverIdSet = new Set(serverSubs.map(s => s.id));
+    const serverSlugSet = new Set(serverSubs.map(s => s.slug));
 
     // Identify brand-new items created by admin locally that are not yet on the server
     const newLocalOnlyItems: AppSubscriptionItem[] = [];
@@ -511,10 +515,10 @@ export async function fetchSubscriptionsFromServer(): Promise<AppSubscriptionIte
       });
     }
 
-    // Merge: newly added local items first, followed by authoritative server items
+    // Authoritative server data takes priority for all existing items across all devices!
     const mergedMap = new Map<string, AppSubscriptionItem>();
+    serverSubs.forEach(item => mergedMap.set(item.id, item));
     newLocalOnlyItems.forEach(item => mergedMap.set(item.id, item));
-    baseList.forEach(item => mergedMap.set(item.id, item));
 
     const merged = Array.from(mergedMap.values());
     inMemorySubscriptions = merged;

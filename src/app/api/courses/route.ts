@@ -37,28 +37,15 @@ function isDemoCourse(course?: { id?: string; slug?: string } | null): boolean {
 
 let memoryCoursesCache: CourseItem[] | null = null;
 let lastFetchTime = 0;
+let coursesWriteQueue: Promise<any> = Promise.resolve();
 
 async function getCoursesData(): Promise<CourseItem[]> {
   const now = Date.now();
-  if (memoryCoursesCache && memoryCoursesCache.length > 0 && now - lastFetchTime < 30000) {
+  if (memoryCoursesCache && memoryCoursesCache.length > 0 && now - lastFetchTime < 10000) {
     return memoryCoursesCache.filter(c => !isDemoCourse(c));
   }
 
-  // 1. Try local filesystem
-  try {
-    if (fs.existsSync(DATA_FILE)) {
-      const raw = fs.readFileSync(DATA_FILE, "utf-8");
-      const parsed: CourseItem[] = JSON.parse(raw);
-      if (Array.isArray(parsed) && parsed.length > 0) {
-        const cleaned = parsed.filter(c => !isDemoCourse(c));
-        memoryCoursesCache = cleaned;
-        lastFetchTime = now;
-        return cleaned;
-      }
-    }
-  } catch (e) {}
-
-  // 2. Try GitHub API
+  // 1. Try GitHub API first so all devices see changes immediately
   try {
     const ghRes = await fetch(`https://api.github.com/repos/${GITHUB_REPO}/contents/${GITHUB_FILE_PATH}`, {
       headers: {
@@ -78,6 +65,9 @@ async function getCoursesData(): Promise<CourseItem[]> {
           const cleaned = parsed.filter(c => !isDemoCourse(c));
           memoryCoursesCache = cleaned;
           lastFetchTime = now;
+          try {
+            fs.writeFileSync(DATA_FILE, JSON.stringify(cleaned, null, 2), "utf-8");
+          } catch (e) {}
           return cleaned;
         }
       }
@@ -86,10 +76,78 @@ async function getCoursesData(): Promise<CourseItem[]> {
     console.error("GitHub API course read error:", ghErr);
   }
 
+  // 2. Fallback to local filesystem
+  try {
+    if (fs.existsSync(DATA_FILE)) {
+      const raw = fs.readFileSync(DATA_FILE, "utf-8");
+      const parsed: CourseItem[] = JSON.parse(raw);
+      if (Array.isArray(parsed) && parsed.length > 0) {
+        const cleaned = parsed.filter(c => !isDemoCourse(c));
+        memoryCoursesCache = cleaned;
+        lastFetchTime = now;
+        return cleaned;
+      }
+    }
+  } catch (e) {}
+
   const defaultList = ACADEMY_COURSES.filter(c => !isDemoCourse(c));
   memoryCoursesCache = defaultList;
   lastFetchTime = now;
   return defaultList;
+}
+
+async function saveCoursesToGitHubWithRetry(cleaned: CourseItem[], maxRetries = 3): Promise<boolean> {
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    try {
+      const getRes = await fetch(`https://api.github.com/repos/${GITHUB_REPO}/contents/${GITHUB_FILE_PATH}`, {
+        headers: {
+          Authorization: `Bearer ${GITHUB_TOKEN}`,
+          "User-Agent": "AdvertyX-App",
+          Accept: "application/vnd.github.v3+json",
+        },
+        cache: "no-store",
+      });
+
+      let currentSha: string | undefined = undefined;
+      if (getRes.ok) {
+        const currentData = await getRes.json();
+        currentSha = currentData.sha;
+      }
+
+      const jsonContent = JSON.stringify(cleaned, null, 2);
+      const base64Content = Buffer.from(jsonContent, "utf-8").toString("base64");
+
+      const putRes = await fetch(`https://api.github.com/repos/${GITHUB_REPO}/contents/${GITHUB_FILE_PATH}`, {
+        method: "PUT",
+        headers: {
+          Authorization: `Bearer ${GITHUB_TOKEN}`,
+          "User-Agent": "AdvertyX-App",
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          message: `Update courses from Admin Panel [auto-sync] - ${new Date().toISOString()}`,
+          content: base64Content,
+          sha: currentSha,
+          branch: "main",
+        }),
+      });
+
+      if (putRes.ok) {
+        return true;
+      }
+
+      if (putRes.status === 409 && attempt < maxRetries) {
+        await new Promise((resolve) => setTimeout(resolve, 500 * attempt));
+        continue;
+      }
+    } catch (ghErr) {
+      console.error(`GitHub API course write attempt ${attempt} error:`, ghErr);
+      if (attempt < maxRetries) {
+        await new Promise((resolve) => setTimeout(resolve, 500 * attempt));
+      }
+    }
+  }
+  return false;
 }
 
 async function persistCoursesData(courses: CourseItem[]): Promise<boolean> {
@@ -101,45 +159,9 @@ async function persistCoursesData(courses: CourseItem[]): Promise<boolean> {
     fs.writeFileSync(DATA_FILE, JSON.stringify(cleaned, null, 2), "utf-8");
   } catch (fsErr) {}
 
-  try {
-    const getRes = await fetch(`https://api.github.com/repos/${GITHUB_REPO}/contents/${GITHUB_FILE_PATH}`, {
-      headers: {
-        Authorization: `Bearer ${GITHUB_TOKEN}`,
-        "User-Agent": "AdvertyX-App",
-        Accept: "application/vnd.github.v3+json",
-      },
-      cache: "no-store",
-    });
-
-    let currentSha: string | undefined = undefined;
-    if (getRes.ok) {
-      const currentData = await getRes.json();
-      currentSha = currentData.sha;
-    }
-
-    const jsonContent = JSON.stringify(cleaned, null, 2);
-    const base64Content = Buffer.from(jsonContent, "utf-8").toString("base64");
-
-    const putRes = await fetch(`https://api.github.com/repos/${GITHUB_REPO}/contents/${GITHUB_FILE_PATH}`, {
-      method: "PUT",
-      headers: {
-        Authorization: `Bearer ${GITHUB_TOKEN}`,
-        "User-Agent": "AdvertyX-App",
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        message: "Update courses from Admin Panel [auto-sync]",
-        content: base64Content,
-        sha: currentSha,
-        branch: "main",
-      }),
-    });
-
-    return putRes.ok;
-  } catch (ghErr) {
-    console.error("GitHub API course write error:", ghErr);
-    return false;
-  }
+  const resultPromise = coursesWriteQueue.then(() => saveCoursesToGitHubWithRetry(cleaned)).catch(() => false);
+  coursesWriteQueue = resultPromise;
+  return resultPromise;
 }
 
 // GET /api/courses
@@ -171,9 +193,9 @@ export async function POST(req: Request) {
       updated = [course, ...current];
     }
 
-    persistCoursesData(updated).catch(e => console.error("Course persist error:", e));
+    const ok = await persistCoursesData(updated);
 
-    return NextResponse.json({ success: true, course, total: updated.length });
+    return NextResponse.json({ success: ok, course, total: updated.length });
   } catch (err) {
     console.error("Failed to save course:", err);
     return NextResponse.json({ error: "Failed to save course" }, { status: 500 });
@@ -191,9 +213,9 @@ export async function DELETE(req: Request) {
 
     const current = await getCoursesData();
     const updated = current.filter(c => c.id !== id);
-    persistCoursesData(updated).catch(e => console.error("Course delete persist error:", e));
+    const ok = await persistCoursesData(updated);
 
-    return NextResponse.json({ success: true, remaining: updated.length });
+    return NextResponse.json({ success: ok, remaining: updated.length });
   } catch (err) {
     console.error("Failed to delete course:", err);
     return NextResponse.json({ error: "Failed to delete course" }, { status: 500 });
