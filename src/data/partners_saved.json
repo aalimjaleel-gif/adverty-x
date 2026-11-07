@@ -10,6 +10,15 @@
     "themeColor": "purple",
     "status": "Active",
     "joinedDate": "November 2026",
-    "paymentDetails": {}
+    "paymentDetails": {
+      "JazzCash": {
+        "number": "03044481402",
+        "title": "Ismail"
+      },
+      "Easypaisa": {
+        "number": "03044481402",
+        "title": "Ismail"
+      }
+    }
   }
 ]

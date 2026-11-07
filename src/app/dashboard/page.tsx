@@ -77,6 +77,7 @@ import {
   ReferralCommissionSettings,
   PartnerVendor,
   getStoredPartners,
+  fetchPartnersFromServer,
   savePartner,
   deletePartner,
   updatePartnerStatus
@@ -256,6 +257,9 @@ export default function UnifiedMasterPanel() {
     setReferralSettings(getReferralSettings());
     setPayouts(getPayoutRequests());
     setPartnersList(getStoredPartners());
+    fetchPartnersFromServer().then((list) => {
+      if (list && list.length > 0) setPartnersList(list);
+    });
 
     const handleCoursesUpdate = () => setCourses(getStoredCourses());
     const handleSubsUpdate = () => setProducts(getStoredSubscriptions());

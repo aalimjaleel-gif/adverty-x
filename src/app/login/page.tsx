@@ -11,6 +11,7 @@ import {
   authenticateWithGoogle,
   getRegisteredUsers,
   getStoredPartners,
+  fetchPartnersFromServer,
   RegisteredUser
 } from "@/lib/store";
 
@@ -36,6 +37,7 @@ export default function LoginPage() {
     setEmail("");
     setPassword("");
     setSavedAccounts(getRegisteredUsers());
+    fetchPartnersFromServer();
     const t1 = setTimeout(() => {
       setEmail("");
       setPassword("");

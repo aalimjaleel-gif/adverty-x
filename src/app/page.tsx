@@ -313,12 +313,12 @@ export default function HomePage() {
                 </p>
               </div>
             </div>
-            <div className="flex items-center gap-2.5 flex-shrink-0 w-full sm:w-auto">
+            <div className="flex flex-wrap sm:flex-nowrap items-center gap-2.5 w-full md:w-auto">
               <a
                 href="https://wa.me/923275991628?text=Assalam%20o%20Alaikum!%20I%20am%20a%20reseller%20looking%20for%20bulk%20subscriptions."
                 target="_blank"
                 rel="noreferrer"
-                className="px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs shadow-md transition-all flex items-center gap-1.5 flex-1 sm:flex-none justify-center"
+                className="px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs shadow-md transition-all flex items-center gap-1.5 flex-1 sm:flex-none justify-center whitespace-nowrap"
               >
                 <span>WhatsApp 0327-5991628</span>
               </a>
@@ -326,7 +326,7 @@ export default function HomePage() {
                 href="https://wa.me/923034581115?text=Assalam%20o%20Alaikum!%20I%20am%20a%20reseller%20looking%20for%20bulk%20subscriptions."
                 target="_blank"
                 rel="noreferrer"
-                className="px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-white font-bold text-xs border border-slate-700 transition-all flex items-center gap-1.5 flex-1 sm:flex-none justify-center"
+                className="px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-white font-bold text-xs border border-slate-700 transition-all flex items-center gap-1.5 flex-1 sm:flex-none justify-center whitespace-nowrap"
               >
                 <span>0303-4581115</span>
               </a>

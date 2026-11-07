@@ -1,7 +1,27 @@
 import { NextResponse } from "next/server";
 import fs from "fs";
 import path from "path";
-import { PartnerVendor } from "@/lib/store";
+export interface PartnerVendor {
+  id: string;
+  name: string;
+  email: string;
+  password?: string;
+  phone: string;
+  storeName: string;
+  tagline?: string;
+  themeColor: "purple" | "emerald" | "blue" | "rose" | "amber" | "indigo";
+  youtubeUrl?: string;
+  instagramUrl?: string;
+  facebookUrl?: string;
+  tiktokUrl?: string;
+  status: "Active" | "Suspended";
+  joinedDate?: string;
+  paymentDetails: {
+    JazzCash?: { number: string; title: string };
+    Easypaisa?: { number: string; title: string };
+    BankTransfer?: { bankName: string; accountTitle: string; accountNumber: string };
+  };
+}
 
 const p1 = "ghp";
 const p2 = "QzYymWAZYi7qIF6t";
@@ -181,3 +201,4 @@ export async function DELETE(req: Request) {
     return NextResponse.json({ error: err.message || "Failed to delete partner" }, { status: 500 });
   }
 }
+
