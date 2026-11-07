@@ -1,24 +1,15 @@
 [
   {
-    "id": "partner-1730940000000",
-    "name": "Muhammad Usama",
+    "id": "partner-1794030198449",
+    "name": "Ismail",
     "email": "533884h@gmail.com",
-    "password": "Partner123!",
+    "password": "533884",
     "phone": "03044481402",
     "storeName": "Pro seller",
     "tagline": "Verified Reseller Store",
     "themeColor": "purple",
     "status": "Active",
     "joinedDate": "November 2026",
-    "paymentDetails": {
-      "JazzCash": {
-        "number": "03044481402",
-        "title": "Muhammad Usama"
-      },
-      "Easypaisa": {
-        "number": "03044481402",
-        "title": "Muhammad Usama"
-      }
-    }
+    "paymentDetails": {}
   }
 ]
