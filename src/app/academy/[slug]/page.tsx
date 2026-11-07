@@ -213,45 +213,16 @@ export default function CourseDetailsPage() {
   const effectivePriceUSD = selectedTier.priceUSD;
   const pricePKR = effectivePricePKR;
 
-  // Partner Vendor Detection
-  const isPartnerCourse = Boolean(
-    course.vendor?.isPartner ||
-    (course.vendor?.vendorName && course.vendor.vendorName !== "Adverty X Official")
-  );
-
   const activeCourseAccounts = {
-    JazzCash: (isPartnerCourse && course.vendor?.JazzCash?.number)
-      ? {
-          number: course.vendor.JazzCash.number,
-          title: course.vendor.JazzCash.title || course.vendor.vendorName
-        }
-      : { number: "03034581115", title: "Ali Ahmed" },
-    OPay: (isPartnerCourse && course.vendor?.OPay?.number)
-      ? {
-          number: course.vendor.OPay.number,
-          title: course.vendor.OPay.title || course.vendor.vendorName
-        }
-      : { number: "03244973465", title: "Shazia Khalil" },
-    Easypaisa: (isPartnerCourse && course.vendor?.Easypaisa?.number)
-      ? {
-          number: course.vendor.Easypaisa.number,
-          title: course.vendor.Easypaisa.title || course.vendor.vendorName
-        }
-      : { number: "03034581115", title: "Ali Ahmed" },
-    BankTransfer: (isPartnerCourse && course.vendor?.BankTransfer?.accountNumber)
-      ? {
-          bankName: course.vendor.BankTransfer.bankName,
-          accountTitle: course.vendor.BankTransfer.accountTitle,
-          accountNumber: course.vendor.BankTransfer.accountNumber
-        }
-      : {
-          bankName: "Meezan Bank",
-          accountTitle: "Adverty X Digital Services",
-          accountNumber: "02010108821992"
-        }
+    JazzCash: { number: "03034581115", title: "Ali Ahmed" },
+    OPay: { number: "03244973465", title: "Shazia Khalil" },
+    Easypaisa: { number: "03034581115", title: "Ali Ahmed" },
+    BankTransfer: {
+      bankName: "Meezan Bank",
+      accountTitle: "Adverty X Digital Services",
+      accountNumber: "02010108821992"
+    }
   };
-
-  const hasPartnerCourseEasypaisa = Boolean(isPartnerCourse && course.vendor?.Easypaisa?.number);
 
   const handleCopy = (text: string, key: string) => {
     navigator.clipboard.writeText(text);
@@ -305,7 +276,7 @@ export default function CourseDetailsPage() {
       type: "course",
       tid: tid,
       paymentMethod: paymentMethod,
-      vendorName: isPartnerCourse ? course.vendor?.vendorName : "Adverty X Official",
+      vendorName: "Adverty X Official",
       planDuration: selectedTier.name,
       screenshotUrl: screenshotUrl || undefined,
       screenshotName: screenshotName || undefined,
@@ -742,17 +713,13 @@ export default function CourseDetailsPage() {
                 </p>
                 <div className="pt-3 flex flex-col gap-2.5">
                   <a
-                    href={`https://wa.me/${(isPartnerCourse && course.vendor?.vendorWhatsApp) ? course.vendor.vendorWhatsApp.replace(/\D/g, "") : "923275991628"}?text=${encodeURIComponent(`Assalam o Alaikum! I enrolled in "${course.title}" (${selectedTier.name}). My WhatsApp is ${customerContact} and TID is ${tid}.`)}`}
+                    href={`https://wa.me/923275991628?text=${encodeURIComponent(`Assalam o Alaikum! I enrolled in "${course.title}" (${selectedTier.name}). My WhatsApp is ${customerContact} and TID is ${tid}.`)}`}
                     target="_blank"
                     rel="noreferrer"
                     className="w-full py-3.5 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold flex items-center justify-center gap-2 shadow-sm"
                   >
                     <MessageCircle className="w-4 h-4" />
-                    <span>
-                      {isPartnerCourse && course.vendor?.vendorWhatsApp
-                        ? `Open Instructor WhatsApp (${course.vendor.vendorWhatsApp})`
-                        : "Open WhatsApp (0327-5991628) for Instant Support"}
-                    </span>
+                    <span>Open WhatsApp (0327-5991628) for Instant Support</span>
                   </a>
                   <button
                     onClick={() => {
@@ -822,23 +789,11 @@ export default function CourseDetailsPage() {
                   </div>
                 </div>
 
-                {/* Partner Vendor Notice */}
-                {isPartnerCourse ? (
-                  <div className="p-2.5 rounded-xl bg-purple-50 border border-purple-200 text-purple-950 text-xs space-y-0.5">
-                    <span className="font-bold flex items-center gap-1.5">
-                      <span className="w-2 h-2 rounded-full bg-purple-600 animate-pulse"></span>
-                      Course Partner: {course.vendor?.vendorName}
-                    </span>
-                    <span className="text-[11px] text-purple-800 block">
-                      Transfer course fees directly to this instructor/partner account below.
-                    </span>
-                  </div>
-                ) : (
-                  <div className="p-2 rounded-xl bg-blue-50/70 border border-blue-200 text-blue-900 text-xs flex items-center justify-between">
-                    <span className="font-semibold text-[11px]">Official Adverty X Academy Masterclass</span>
-                    <span className="text-[10px] text-blue-700 font-bold">Verified Direct Access</span>
-                  </div>
-                )}
+                {/* Official Direct Notice */}
+                <div className="p-2 rounded-xl bg-blue-50/70 border border-blue-200 text-blue-900 text-xs flex items-center justify-between">
+                  <span className="font-semibold text-[11px]">Official Adverty X Academy Masterclass</span>
+                  <span className="text-[10px] text-blue-700 font-bold">Verified Direct Access</span>
+                </div>
 
                 {/* Payment Method Selector */}
                 <div>
@@ -848,8 +803,8 @@ export default function CourseDetailsPage() {
                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                     {[
                       { key: "JazzCash" as const, label: "JazzCash", isComingSoon: false },
-                      { key: "OPay" as const, label: "OPay", isComingSoon: isPartnerCourse && !course.vendor?.OPay?.number },
-                      { key: "Easypaisa" as const, label: "Easypaisa", isComingSoon: !hasPartnerCourseEasypaisa },
+                      { key: "OPay" as const, label: "OPay", isComingSoon: false },
+                      { key: "Easypaisa" as const, label: "Easypaisa", isComingSoon: false },
                       { key: "Bank Transfer" as const, label: "Bank Transfer", isComingSoon: false }
                     ].map((m) => {
                       const isSelected = paymentMethod === m.key;
@@ -893,7 +848,7 @@ export default function CourseDetailsPage() {
                       Transfer exact amount (Rs {effectivePricePKR.toLocaleString()}) to:
                     </span>
                     <span className="text-[10px] font-bold text-brand-600 uppercase">
-                      {isPartnerCourse ? `${course.vendor?.vendorName} Account` : "Official Account"}
+                      Official Account
                     </span>
                   </div>
 

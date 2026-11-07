@@ -148,9 +148,8 @@ export interface VendorPaymentAccount {
 }
 
 export interface VendorPaymentDetails {
-  isPartner?: boolean;
-  vendorName: string; // e.g. "Adverty X Official" or "Partner Usman"
-  vendorWhatsApp?: string; // e.g. "03275991628"
+  vendorName: string; // "Adverty X Official"
+  vendorWhatsApp?: string; // "03275991628"
   vendorEmail?: string;
   JazzCash?: VendorPaymentAccount;
   OPay?: VendorPaymentAccount;

@@ -50,28 +50,6 @@ export interface PayoutRequest {
   status: "Pending" | "Approved & Paid";
 }
 
-export interface PartnerVendor {
-  id: string;
-  name: string;
-  email: string;
-  password?: string;
-  phone: string;
-  storeName: string;
-  tagline?: string;
-  themeColor: "purple" | "emerald" | "blue" | "rose" | "amber" | "indigo";
-  youtubeUrl?: string;
-  instagramUrl?: string;
-  facebookUrl?: string;
-  tiktokUrl?: string;
-  status: "Active" | "Suspended";
-  joinedDate: string;
-  paymentDetails: {
-    JazzCash?: { number: string; title: string };
-    Easypaisa?: { number: string; title: string };
-    BankTransfer?: { bankName: string; accountTitle: string; accountNumber: string };
-  };
-}
-
 const COURSES_STORAGE_KEY = "advertyx_courses_data";
 const SUBSCRIPTIONS_STORAGE_KEY = "advertyx_subscriptions_data";
 const SERVICES_STORAGE_KEY = "advertyx_services_data";
@@ -80,34 +58,12 @@ const AUTH_STORAGE_KEY = "advertyx_admin_logged_in";
 const REGISTERED_USERS_KEY = "advertyx_registered_users";
 const REFERRAL_SETTINGS_KEY = "advertyx_referral_settings";
 const PAYOUTS_STORAGE_KEY = "advertyx_payout_requests";
-const PARTNERS_STORAGE_KEY = "advertyx_partners_data";
-const PARTNER_SESSION_KEY = "advertyx_active_partner";
 
 // In-memory fallbacks
 let inMemoryCourses: CourseItem[] = [...ACADEMY_COURSES];
 let inMemorySubscriptions: AppSubscriptionItem[] = [...APP_SUBSCRIPTIONS];
 let inMemoryServices: ServiceItem[] = [...AGENCY_SERVICES];
 let inMemoryOrders: OrderItem[] = []; // ZERO demo customers by default
-const DEFAULT_INITIAL_PARTNERS: PartnerVendor[] = [
-  {
-    id: "partner-1730940000000",
-    name: "Muhammad Usama",
-    email: "533884h@gmail.com",
-    password: "Partner123!",
-    phone: "03044481402",
-    storeName: "Pro seller",
-    tagline: "Verified Reseller Store",
-    themeColor: "purple",
-    status: "Active",
-    joinedDate: "November 2026",
-    paymentDetails: {
-      JazzCash: { number: "03044481402", title: "Muhammad Usama" },
-      Easypaisa: { number: "03044481402", title: "Muhammad Usama" }
-    }
-  }
-];
-
-let inMemoryPartners: PartnerVendor[] = [...DEFAULT_INITIAL_PARTNERS];
 let inMemoryReferralSettings: ReferralCommissionSettings = {
   courseEnrollmentPKR: 20,
   appSubscriptionPKR: 10,
@@ -149,7 +105,6 @@ export interface UserProfile {
   joinedDate?: string;
   role: string;
   isAdmin?: boolean;
-  isPartner?: boolean;
   provider?: string;
   phone?: string;
 }
@@ -184,8 +139,6 @@ export function saveRegisteredUser(user: RegisteredUser): void {
 export function authenticateWithPassword(email: string, password: string): { 
   success: boolean; 
   user?: UserProfile; 
-  partner?: PartnerVendor;
-  isPartner?: boolean;
   error?: string 
 } {
   const cleanEmail = email.trim().toLowerCase();
@@ -204,45 +157,6 @@ export function authenticateWithPassword(email: string, password: string): {
         role: "Master Administrator",
         isAdmin: true
       } 
-    };
-  }
-
-  // Check if email belongs to a Registered Partner Vendor!
-  const partners = getStoredPartners();
-  const foundPartner = partners.find(p => p.email.toLowerCase() === cleanEmail);
-  if (foundPartner) {
-    if (foundPartner.status === "Suspended") {
-      return { 
-        success: false, 
-        error: "Your partner vendor account is currently suspended by the Super Administrator. Please contact support." 
-      };
-    }
-    // Partner studio login: accept the password, or auto-sync with what was typed so partner/owner is NEVER locked out!
-    if (foundPartner.password && foundPartner.password !== password) {
-      if (password === "Partner123!" || password === "partner123" || password === "admin123" || password === "123456") {
-        // Master test passwords accepted
-      } else {
-        // Auto-update to the password entered so login always succeeds seamlessly!
-        foundPartner.password = password;
-        savePartner(foundPartner);
-      }
-    }
-    loginPartner(foundPartner);
-    const partnerUser: UserProfile = {
-      name: foundPartner.name,
-      email: foundPartner.email,
-      joinedDate: foundPartner.joinedDate || "October 2026",
-      role: "Partner Vendor",
-      isAdmin: false,
-      isPartner: true,
-      phone: foundPartner.phone
-    };
-    loginClient(partnerUser);
-    return { 
-      success: true, 
-      user: partnerUser, 
-      partner: foundPartner, 
-      isPartner: true 
     };
   }
 
@@ -281,164 +195,6 @@ export function authenticateWithPassword(email: string, password: string): {
   return { success: true, user: newUser };
 }
 
-// ============================================================================
-// PARTNER VENDOR STORAGE & PERMISSIONS ENGINE
-// ============================================================================
-
-let hasFetchedServerPartners = false;
-
-export async function fetchPartnersFromServer(): Promise<PartnerVendor[]> {
-  try {
-    const res = await fetch("/api/partners", { cache: "no-store" });
-    let serverPartners: PartnerVendor[] = [];
-    if (res.ok) {
-      try {
-        serverPartners = await res.json();
-      } catch (e) {}
-    }
-    let localPartners: PartnerVendor[] = [];
-    if (typeof window !== "undefined") {
-      try {
-        const raw = localStorage.getItem(PARTNERS_STORAGE_KEY);
-        if (raw) localPartners = JSON.parse(raw);
-      } catch (e) {}
-    }
-    const map = new Map<string, PartnerVendor>();
-    DEFAULT_INITIAL_PARTNERS.forEach(p => map.set(p.email.toLowerCase(), p));
-    if (Array.isArray(serverPartners)) {
-      serverPartners.forEach(p => map.set(p.email.toLowerCase(), p));
-    }
-    if (Array.isArray(localPartners)) {
-      localPartners.forEach(p => map.set(p.email.toLowerCase(), p));
-    }
-    const merged = Array.from(map.values());
-    inMemoryPartners = merged;
-    if (typeof window !== "undefined") {
-      localStorage.setItem(PARTNERS_STORAGE_KEY, JSON.stringify(merged));
-      window.dispatchEvent(new Event("advertyx_partners_updated"));
-    }
-    return merged;
-  } catch (err) {
-    return inMemoryPartners;
-  }
-}
-
-export function getStoredPartners(): PartnerVendor[] {
-  if (typeof window === "undefined") return inMemoryPartners;
-  if (!hasFetchedServerPartners) {
-    hasFetchedServerPartners = true;
-    fetchPartnersFromServer();
-  }
-  try {
-    const raw = localStorage.getItem(PARTNERS_STORAGE_KEY);
-    if (!raw) {
-      localStorage.setItem(PARTNERS_STORAGE_KEY, JSON.stringify(DEFAULT_INITIAL_PARTNERS));
-      inMemoryPartners = DEFAULT_INITIAL_PARTNERS;
-      return DEFAULT_INITIAL_PARTNERS;
-    }
-    const parsed = JSON.parse(raw);
-    if (Array.isArray(parsed) && parsed.length > 0) {
-      const map = new Map<string, PartnerVendor>();
-      DEFAULT_INITIAL_PARTNERS.forEach(p => map.set(p.email.toLowerCase(), p));
-      parsed.forEach((p: PartnerVendor) => {
-        if (p && p.email) map.set(p.email.toLowerCase(), p);
-      });
-      const combined = Array.from(map.values());
-      inMemoryPartners = combined;
-      return combined;
-    }
-    return inMemoryPartners;
-  } catch (e) {
-    return inMemoryPartners;
-  }
-}
-
-export function savePartner(partner: PartnerVendor): PartnerVendor[] {
-  const current = getStoredPartners();
-  const existingIdx = current.findIndex(p => p.id === partner.id || p.email.toLowerCase() === partner.email.toLowerCase());
-  let updated: PartnerVendor[];
-  if (existingIdx >= 0) {
-    updated = [...current];
-    updated[existingIdx] = { ...updated[existingIdx], ...partner };
-  } else {
-    updated = [partner, ...current];
-  }
-  inMemoryPartners = updated;
-  if (typeof window !== "undefined") {
-    localStorage.setItem(PARTNERS_STORAGE_KEY, JSON.stringify(updated));
-    window.dispatchEvent(new Event("advertyx_partners_updated"));
-    
-    // Sync to Server API so it's permanently stored across all devices & Vercel
-    fetch("/api/partners", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(partner)
-    }).catch(e => console.error("Server partner sync error:", e));
-  }
-  return updated;
-}
-
-export function deletePartner(id: string): PartnerVendor[] {
-  const current = getStoredPartners();
-  const updated = current.filter(p => p.id !== id);
-  inMemoryPartners = updated;
-  if (typeof window !== "undefined") {
-    localStorage.setItem(PARTNERS_STORAGE_KEY, JSON.stringify(updated));
-    window.dispatchEvent(new Event("advertyx_partners_updated"));
-
-    fetch(`/api/partners?id=${encodeURIComponent(id)}`, {
-      method: "DELETE"
-    }).catch(e => console.error("Server partner delete error:", e));
-  }
-  return updated;
-}
-
-export function updatePartnerStatus(id: string, status: "Active" | "Suspended"): PartnerVendor[] {
-  const current = getStoredPartners();
-  const updated = current.map(p => p.id === id ? { ...p, status } : p);
-  inMemoryPartners = updated;
-  if (typeof window !== "undefined") {
-    localStorage.setItem(PARTNERS_STORAGE_KEY, JSON.stringify(updated));
-    window.dispatchEvent(new Event("advertyx_partners_updated"));
-    const updatedPartner = updated.find(p => p.id === id);
-    if (updatedPartner) {
-      fetch("/api/partners", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(updatedPartner)
-      }).catch(e => console.error("Server partner status error:", e));
-    }
-  }
-  return updated;
-}
-
-export function getActivePartnerSession(): PartnerVendor | null {
-  if (typeof window === "undefined") return null;
-  try {
-    const raw = localStorage.getItem(PARTNER_SESSION_KEY);
-    if (!raw) return null;
-    return JSON.parse(raw);
-  } catch (e) {
-    return null;
-  }
-}
-
-export function loginPartner(partner: PartnerVendor): void {
-  if (typeof window !== "undefined") {
-    localStorage.setItem(PARTNER_SESSION_KEY, JSON.stringify(partner));
-    window.dispatchEvent(new Event("advertyx_partner_session_changed"));
-    window.dispatchEvent(new Event("advertyx_auth_changed"));
-  }
-}
-
-export function logoutPartner(): void {
-  if (typeof window !== "undefined") {
-    localStorage.removeItem(PARTNER_SESSION_KEY);
-    window.dispatchEvent(new Event("advertyx_partner_session_changed"));
-    window.dispatchEvent(new Event("advertyx_auth_changed"));
-  }
-}
-
 export function authenticateWithGoogle(email: string, name?: string): UserProfile {
   const cleanEmail = email.trim().toLowerCase();
 
@@ -456,25 +212,7 @@ export function authenticateWithGoogle(email: string, name?: string): UserProfil
     return adminUser;
   }
 
-  // 2. Registered Partner Vendor bypass
-  const partners = getStoredPartners();
-  const foundPartner = partners.find(p => p.email.toLowerCase() === cleanEmail);
-  if (foundPartner) {
-    loginPartner(foundPartner);
-    const partnerUser: UserProfile = {
-      name: foundPartner.name,
-      email: foundPartner.email,
-      joinedDate: foundPartner.joinedDate || "October 2026",
-      role: "Partner Vendor",
-      isAdmin: false,
-      isPartner: true,
-      phone: foundPartner.phone
-    };
-    loginClient(partnerUser);
-    return partnerUser;
-  }
-
-  // 3. Existing Registered Customer - retain past orders & history!
+  // 2. Existing Registered Customer - retain past orders & history!
   const users = getRegisteredUsers();
   const found = users.find(u => u.email.toLowerCase() === cleanEmail);
   if (found) {
@@ -491,7 +229,7 @@ export function authenticateWithGoogle(email: string, name?: string): UserProfil
     return profile;
   }
 
-  // 4. Brand new Google client
+  // 3. Brand new Google client
   const newUser: RegisteredUser = {
     name: name?.trim() || cleanEmail.split("@")[0].replace(/[._]/g, " "),
     email: cleanEmail,
@@ -535,34 +273,9 @@ export function getAuthenticatedUser(): UserProfile | null {
     return adminUser;
   }
 
-  // Check active partner session
-  const activePartner = getActivePartnerSession();
-  if (activePartner) {
-    return {
-      name: activePartner.name,
-      email: activePartner.email,
-      joinedDate: activePartner.joinedDate || "October 2026",
-      role: "Partner Vendor",
-      isAdmin: false,
-      isPartner: true,
-      phone: activePartner.phone
-    };
-  }
-
   if (!raw) return null;
   try {
-    const parsed: UserProfile = JSON.parse(raw);
-    const partners = getStoredPartners();
-    const isPartnerUser = partners.find(p => p.email.toLowerCase() === parsed.email.toLowerCase());
-    if (isPartnerUser) {
-      loginPartner(isPartnerUser);
-      return {
-        ...parsed,
-        role: "Partner Vendor",
-        isPartner: true
-      };
-    }
-    return parsed;
+    return JSON.parse(raw);
   } catch (e) {
     return null;
   }

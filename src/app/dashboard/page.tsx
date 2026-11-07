@@ -74,29 +74,11 @@ import {
   getPayoutRequests,
   approvePayoutRequest,
   PayoutRequest,
-  ReferralCommissionSettings,
-  PartnerVendor,
-  getStoredPartners,
-  fetchPartnersFromServer,
-  savePartner,
-  deletePartner,
-  updatePartnerStatus
+  ReferralCommissionSettings
 } from "@/lib/store";
 
 export default function UnifiedMasterPanel() {
   const [activeTab, setActiveTab] = useState("dashboard");
-  
-  // Partners & Reseller Vendors State
-  const [partnersList, setPartnersList] = useState<PartnerVendor[]>([]);
-  const [isAddPartnerModalOpen, setIsAddPartnerModalOpen] = useState(false);
-  const [partnerForm, setPartnerForm] = useState({
-    name: "",
-    email: "",
-    password: "",
-    phone: "",
-    storeName: "",
-    themeColor: "purple" as "purple" | "emerald" | "blue" | "rose" | "amber" | "indigo"
-  });
 
   // Courses State
   const [courses, setCourses] = useState<CourseItem[]>([]);
@@ -137,14 +119,7 @@ export default function UnifiedMasterPanel() {
     inStock: true,
     iconType: "prime",
     description: "",
-    fulfillmentType: "Private Screen Profile",
-    vendorIsPartner: false,
-    vendorName: "",
-    vendorWhatsApp: "",
-    vendorJazzCashNumber: "",
-    vendorJazzCashTitle: "",
-    vendorEasypaisaNumber: "",
-    vendorEasypaisaTitle: "",
+    fulfillmentType: "Private Screen Profile"
   });
 
   // Services State
@@ -201,13 +176,6 @@ export default function UnifiedMasterPanel() {
     duration: string;
     description: string;
     lessons: { title: string; duration: string; videoUrl: string }[];
-    vendorIsPartner: boolean;
-    vendorName: string;
-    vendorWhatsApp: string;
-    vendorJazzCashNumber: string;
-    vendorJazzCashTitle: string;
-    vendorEasypaisaNumber: string;
-    vendorEasypaisaTitle: string;
   }>({
     title: "",
     slug: "",
@@ -221,14 +189,7 @@ export default function UnifiedMasterPanel() {
     level: "All Levels",
     duration: "4 Hours",
     description: "",
-    lessons: [], // Completely clean! User adds lectures themselves
-    vendorIsPartner: false,
-    vendorName: "",
-    vendorWhatsApp: "",
-    vendorJazzCashNumber: "",
-    vendorJazzCashTitle: "",
-    vendorEasypaisaNumber: "",
-    vendorEasypaisaTitle: ""
+    lessons: [] // Completely clean! User adds lectures themselves
   });
 
   const thumbnailPresets = [
@@ -256,24 +217,18 @@ export default function UnifiedMasterPanel() {
     setOrders(getStoredOrders());
     setReferralSettings(getReferralSettings());
     setPayouts(getPayoutRequests());
-    setPartnersList(getStoredPartners());
-    fetchPartnersFromServer().then((list) => {
-      if (list && list.length > 0) setPartnersList(list);
-    });
 
     const handleCoursesUpdate = () => setCourses(getStoredCourses());
     const handleSubsUpdate = () => setProducts(getStoredSubscriptions());
     const handleServicesUpdate = () => setServices(getStoredServices());
     const handleOrdersUpdate = () => setOrders(getStoredOrders());
     const handlePayoutsUpdate = () => setPayouts(getPayoutRequests());
-    const handlePartnersUpdate = () => setPartnersList(getStoredPartners());
 
     window.addEventListener("advertyx_courses_updated", handleCoursesUpdate);
     window.addEventListener("advertyx_subscriptions_updated", handleSubsUpdate);
     window.addEventListener("advertyx_services_updated", handleServicesUpdate);
     window.addEventListener("advertyx_orders_updated", handleOrdersUpdate);
     window.addEventListener("advertyx_payouts_updated", handlePayoutsUpdate);
-    window.addEventListener("advertyx_partners_updated", handlePartnersUpdate);
 
     return () => {
       window.removeEventListener("advertyx_courses_updated", handleCoursesUpdate);
@@ -281,7 +236,6 @@ export default function UnifiedMasterPanel() {
       window.removeEventListener("advertyx_services_updated", handleServicesUpdate);
       window.removeEventListener("advertyx_orders_updated", handleOrdersUpdate);
       window.removeEventListener("advertyx_payouts_updated", handlePayoutsUpdate);
-      window.removeEventListener("advertyx_partners_updated", handlePartnersUpdate);
     };
   }, []);
 
@@ -340,14 +294,7 @@ export default function UnifiedMasterPanel() {
       inStock: true,
       iconType: "prime",
       description: "Ultra HD 4K streaming with dedicated PIN profile, personal watchlist, and full replacement warranty.",
-      fulfillmentType: "Private Screen Profile",
-      vendorIsPartner: false,
-      vendorName: "",
-      vendorWhatsApp: "",
-      vendorJazzCashNumber: "",
-      vendorJazzCashTitle: "",
-      vendorEasypaisaNumber: "",
-      vendorEasypaisaTitle: ""
+      fulfillmentType: "Private Screen Profile"
     });
     setIsSubModalOpen(true);
   };
@@ -368,14 +315,7 @@ export default function UnifiedMasterPanel() {
       inStock: item.inStock,
       iconType: item.iconType,
       description: item.description,
-      fulfillmentType: item.fulfillmentType,
-      vendorIsPartner: !!item.vendor?.isPartner,
-      vendorName: item.vendor?.vendorName || "",
-      vendorWhatsApp: item.vendor?.vendorWhatsApp || "",
-      vendorJazzCashNumber: item.vendor?.JazzCash?.number || "",
-      vendorJazzCashTitle: item.vendor?.JazzCash?.title || "",
-      vendorEasypaisaNumber: item.vendor?.Easypaisa?.number || "",
-      vendorEasypaisaTitle: item.vendor?.Easypaisa?.title || ""
+      fulfillmentType: item.fulfillmentType
     });
     setIsSubModalOpen(true);
   };
@@ -397,22 +337,6 @@ export default function UnifiedMasterPanel() {
           : 0);
     const cleanCost = Number(subForm.internalCostPKR) || 0;
 
-    const vendorData = subForm.vendorIsPartner ? {
-      isPartner: true,
-      vendorName: subForm.vendorName.trim() || "Partner",
-      vendorWhatsApp: subForm.vendorWhatsApp.trim(),
-      JazzCash: subForm.vendorJazzCashNumber.trim() ? {
-        number: subForm.vendorJazzCashNumber.trim(),
-        formattedNumber: subForm.vendorJazzCashNumber.trim(),
-        title: subForm.vendorJazzCashTitle.trim() || subForm.vendorName.trim()
-      } : undefined,
-      Easypaisa: subForm.vendorEasypaisaNumber.trim() ? {
-        number: subForm.vendorEasypaisaNumber.trim(),
-        formattedNumber: subForm.vendorEasypaisaNumber.trim(),
-        title: subForm.vendorEasypaisaTitle.trim() || subForm.vendorName.trim()
-      } : undefined,
-    } : undefined;
-
     const subItem: AppSubscriptionItem = {
       id: cleanId,
       name: subForm.name.trim(),
@@ -429,8 +353,7 @@ export default function UnifiedMasterPanel() {
       iconBg: "bg-white",
       iconType: subForm.iconType,
       description: subForm.description.trim() || `${subForm.name} subscription with ${subForm.warrantyBadge} and instant delivery.`,
-      fulfillmentType: subForm.fulfillmentType,
-      vendor: vendorData
+      fulfillmentType: subForm.fulfillmentType
     };
 
     if (editingSubItem) {
@@ -567,14 +490,7 @@ export default function UnifiedMasterPanel() {
       level: "All Levels",
       duration: "4 Hours",
       description: "",
-      lessons: [], // Completely empty, you add your own lectures!
-      vendorIsPartner: false,
-      vendorName: "",
-      vendorWhatsApp: "",
-      vendorJazzCashNumber: "",
-      vendorJazzCashTitle: "",
-      vendorEasypaisaNumber: "",
-      vendorEasypaisaTitle: ""
+      lessons: [] // Completely empty, you add your own lectures!
     });
     setIsAddCourseModalOpen(true);
   };
@@ -602,14 +518,7 @@ export default function UnifiedMasterPanel() {
         title: l.title,
         duration: l.duration,
         videoUrl: l.videoUrl || ""
-      }))),
-      vendorIsPartner: !!c.vendor?.isPartner,
-      vendorName: c.vendor?.vendorName || "",
-      vendorWhatsApp: c.vendor?.vendorWhatsApp || "",
-      vendorJazzCashNumber: c.vendor?.JazzCash?.number || "",
-      vendorJazzCashTitle: c.vendor?.JazzCash?.title || "",
-      vendorEasypaisaNumber: c.vendor?.Easypaisa?.number || "",
-      vendorEasypaisaTitle: c.vendor?.Easypaisa?.title || ""
+      })))
     });
     setIsAddCourseModalOpen(true);
   };
@@ -662,21 +571,6 @@ export default function UnifiedMasterPanel() {
           description: "Unlimited permanent access, certificate & mentor support."
         }
       ],
-      vendor: courseForm.vendorIsPartner ? {
-        isPartner: true,
-        vendorName: courseForm.vendorName.trim() || "Instructor Partner",
-        vendorWhatsApp: courseForm.vendorWhatsApp.trim(),
-        JazzCash: courseForm.vendorJazzCashNumber.trim() ? {
-          number: courseForm.vendorJazzCashNumber.trim(),
-          formattedNumber: courseForm.vendorJazzCashNumber.trim(),
-          title: courseForm.vendorJazzCashTitle.trim() || courseForm.vendorName.trim()
-        } : undefined,
-        Easypaisa: courseForm.vendorEasypaisaNumber.trim() ? {
-          number: courseForm.vendorEasypaisaNumber.trim(),
-          formattedNumber: courseForm.vendorEasypaisaNumber.trim(),
-          title: courseForm.vendorEasypaisaTitle.trim() || courseForm.vendorName.trim()
-        } : undefined,
-      } : undefined,
       curriculum: [
         {
           module: "Module 1: Video Masterclass (In-Browser Streaming)",
@@ -769,63 +663,9 @@ export default function UnifiedMasterPanel() {
     showToast("New manual order recorded successfully!");
   };
 
-  const handleSavePartnerSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!partnerForm.email.trim()) {
-      alert("Please enter partner email address.");
-      return;
-    }
-
-    const cleanEmail = partnerForm.email.trim().toLowerCase();
-    const cleanName = partnerForm.name.trim() || cleanEmail.split("@")[0].replace(/[._]/g, " ");
-
-    const newPartner: PartnerVendor = {
-      id: `partner-${Date.now()}`,
-      name: cleanName,
-      email: cleanEmail,
-      password: partnerForm.password.trim() || "Partner123!",
-      phone: partnerForm.phone.trim() || "0300-1234567",
-      storeName: partnerForm.storeName.trim() || `${cleanName}'s Store`,
-      tagline: "Verified Reseller Store",
-      themeColor: partnerForm.themeColor,
-      status: "Active",
-      joinedDate: new Date().toLocaleDateString("en-US", { month: "long", year: "numeric" }),
-      paymentDetails: {}
-    };
-
-    savePartner(newPartner);
-    setPartnersList(getStoredPartners());
-    setIsAddPartnerModalOpen(false);
-    setPartnerForm({
-      name: "",
-      email: "",
-      password: "",
-      phone: "",
-      storeName: "",
-      themeColor: "purple"
-    });
-    showToast(`✅ Partner "${newPartner.name}" added! They can now log in at /login with their Gmail.`);
-  };
-
-  const handleTogglePartnerStatus = (p: PartnerVendor) => {
-    const newStatus = p.status === "Active" ? "Suspended" : "Active";
-    updatePartnerStatus(p.id, newStatus);
-    setPartnersList(getStoredPartners());
-    showToast(`Partner "${p.name}" status updated to ${newStatus}.`);
-  };
-
-  const handleDeletePartnerClick = (p: PartnerVendor) => {
-    if (confirm(`Are you sure you want to permanently remove partner "${p.name}" (${p.email})? Their portal access will be revoked immediately.`)) {
-      deletePartner(p.id);
-      setPartnersList(getStoredPartners());
-      showToast(`Partner "${p.name}" has been removed.`);
-    }
-  };
-
   // Sidebar Links
   const sidebarLinks = [
     { id: "dashboard", label: "Dashboard", icon: LayoutDashboard },
-    { id: "partners", label: "Partners & Vendors", icon: Store, badge: `${partnersList.length}` },
     { id: "courses", label: "Courses & Lectures", icon: GraduationCap, badge: `${courses.length}` },
     { id: "subscriptions", label: "Subscriptions (Price Editor)", icon: Sparkles, badge: `${products.length}` },
     { id: "services", label: "Services & Packages", icon: Layers, badge: `${services.length}` },
@@ -1017,131 +857,6 @@ export default function UnifiedMasterPanel() {
                   </div>
                 </div>
 
-              </div>
-            )}
-
-            {/* TAB: PARTNERS & VENDORS */}
-            {activeTab === "partners" && (
-              <div className="space-y-6 animate-in fade-in duration-150">
-                <div className="bg-white rounded-3xl border border-slate-200 p-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-xs">
-                  <div>
-                    <div className="flex items-center gap-2">
-                      <h3 className="text-xl font-black text-slate-900 tracking-tight">Partners & Reseller Vendors</h3>
-                      <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-purple-50 text-purple-700 border border-purple-200">
-                        Multi-Vendor Control
-                      </span>
-                    </div>
-                    <p className="text-xs text-slate-500 mt-0.5">
-                      Authorize partner Gmail accounts, grant custom store themes, and manage vendor portal access.
-                    </p>
-                  </div>
-
-                  <button
-                    onClick={() => {
-                      setPartnerForm({
-                        name: "",
-                        email: "",
-                        password: "",
-                        phone: "",
-                        storeName: "",
-                        themeColor: "purple"
-                      });
-                      setIsAddPartnerModalOpen(true);
-                    }}
-                    className="px-4 py-2.5 rounded-xl bg-brand-600 hover:bg-brand-700 text-white text-xs font-black flex items-center gap-2 shadow-sm transition-all cursor-pointer self-start sm:self-auto"
-                  >
-                    <Plus className="w-4 h-4" />
-                    <span>+ Add New Partner Vendor</span>
-                  </button>
-                </div>
-
-                {partnersList.length === 0 ? (
-                  <div className="bg-white rounded-3xl border border-slate-200 p-12 text-center space-y-3">
-                    <div className="w-14 h-14 rounded-2xl bg-purple-50 text-purple-600 flex items-center justify-center mx-auto">
-                      <Store className="w-7 h-7" />
-                    </div>
-                    <h4 className="text-base font-bold text-slate-900">No Partners Added Yet</h4>
-                    <p className="text-xs text-slate-500 max-w-md mx-auto leading-relaxed">
-                      Click <strong>"+ Add New Partner Vendor"</strong> above to give any partner access. They can log in with their Gmail, customize their store name, theme, and YouTube links, and publish products with their own JazzCash / Easypaisa payment accounts!
-                    </p>
-                  </div>
-                ) : (
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                    {partnersList.map((p) => {
-                      const partnerProductsCount = products.filter(item => item.vendor?.vendorName === p.storeName || item.vendor?.vendorName === p.name).length;
-                      return (
-                        <div key={p.id} className="bg-white rounded-3xl border border-slate-200 p-5 shadow-xs space-y-4">
-                          <div className="flex items-start justify-between">
-                            <div className="flex items-center gap-3">
-                              <div className="w-11 h-11 rounded-2xl bg-gradient-to-tr from-purple-600 to-indigo-600 text-white font-black flex items-center justify-center text-base shadow-xs">
-                                {p.name.charAt(0).toUpperCase()}
-                              </div>
-                              <div>
-                                <h4 className="text-sm font-black text-slate-900">{p.name}</h4>
-                                <span className="text-xs text-slate-500 block">{p.email}</span>
-                              </div>
-                            </div>
-                            <span className={`text-[10px] font-black px-2 py-0.5 rounded-full ${
-                              p.status === "Active"
-                                ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
-                                : "bg-amber-50 text-amber-700 border border-amber-200"
-                            }`}>
-                              {p.status}
-                            </span>
-                          </div>
-
-                          <div className="p-3 rounded-2xl bg-slate-50 border border-slate-100 text-xs space-y-1.5">
-                            <div className="flex justify-between items-center text-slate-600">
-                              <span>Store Brand:</span>
-                              <strong className="text-slate-900">{p.storeName}</strong>
-                            </div>
-                            <div className="flex justify-between items-center text-slate-600">
-                              <span>WhatsApp:</span>
-                              <strong className="text-slate-900 font-mono">{p.phone}</strong>
-                            </div>
-                            <div className="flex justify-between items-center text-slate-600">
-                              <span>Active Products:</span>
-                              <strong className="text-brand-600">{partnerProductsCount} items in store</strong>
-                            </div>
-                          </div>
-
-                          {/* Action Buttons */}
-                          <div className="flex items-center justify-between border-t border-slate-100 pt-3">
-                            <div className="flex items-center gap-1.5">
-                              <button
-                                type="button"
-                                onClick={() => handleTogglePartnerStatus(p)}
-                                className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${
-                                  p.status === "Active"
-                                    ? "bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-200"
-                                    : "bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-200"
-                                }`}
-                              >
-                                {p.status === "Active" ? "Suspend" : "Activate"}
-                              </button>
-                              <button
-                                type="button"
-                                onClick={() => handleDeletePartnerClick(p)}
-                                className="px-2.5 py-1 rounded-lg bg-red-50 hover:bg-red-100 text-red-700 text-xs font-bold border border-red-200 cursor-pointer"
-                              >
-                                Delete
-                              </button>
-                            </div>
-
-                            <a
-                              href="/partner"
-                              target="_blank"
-                              className="text-[11px] font-bold text-brand-600 hover:text-brand-700 flex items-center gap-1"
-                            >
-                              <span>Studio</span>
-                              <ExternalLink className="w-3 h-3" />
-                            </a>
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                )}
               </div>
             )}
 
@@ -1622,15 +1337,9 @@ export default function UnifiedMasterPanel() {
                             <td className="py-3">
                               <div className="font-bold text-slate-900">{o.product}</div>
                               <div className="flex flex-wrap items-center gap-1.5 mt-1">
-                                {o.vendorName && o.vendorName !== "Adverty X Official" ? (
-                                  <span className="text-[10px] font-bold text-purple-700 bg-purple-50 px-2 py-0.5 rounded-md border border-purple-200">
-                                    🏢 Partner: {o.vendorName}
-                                  </span>
-                                ) : (
-                                  <span className="text-[10px] font-bold text-blue-700 bg-blue-50 px-2 py-0.5 rounded-md border border-blue-200">
-                                    ✓ Official Adverty X
-                                  </span>
-                                )}
+                                <span className="text-[10px] font-bold text-blue-700 bg-blue-50 px-2 py-0.5 rounded-md border border-blue-200">
+                                  ✓ Official Adverty X
+                                </span>
                                 {o.planDuration && (
                                   <span className="text-[10px] font-bold text-slate-600 bg-slate-100 px-1.5 py-0.5 rounded-md">
                                     {o.planDuration}
@@ -2186,117 +1895,6 @@ export default function UnifiedMasterPanel() {
                         ) : (
                           <span className="text-[11px] text-slate-400 block pt-1">Trial option disabled for this course.</span>
                         )}
-                      </div>
-                    </div>
-                  </div>
-                )}
-              </div>
-
-              {/* Multi-Vendor Partner Routing for Course */}
-              <div className="p-4 rounded-2xl bg-indigo-50/70 border border-indigo-200 space-y-3">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <span className="text-xs font-black text-indigo-950 uppercase block">
-                      👨‍🏫 Course Instructor / Partner Ownership
-                    </span>
-                    <span className="text-[11px] text-indigo-700">
-                      Select if this course is taught by Official Adverty X or a Partner
-                    </span>
-                  </div>
-                  <span className="text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-indigo-200 text-indigo-900">
-                    Vendor Routing
-                  </span>
-                </div>
-
-                <div className="grid grid-cols-2 gap-2">
-                  <button
-                    type="button"
-                    onClick={() => setCourseForm({ ...courseForm, vendorIsPartner: false })}
-                    className={`p-2.5 rounded-xl border text-xs font-bold transition-all text-center cursor-pointer ${
-                      !courseForm.vendorIsPartner
-                        ? "bg-brand-600 text-white border-brand-600 shadow-xs"
-                        : "bg-white border-indigo-200 text-indigo-900 hover:bg-indigo-100/50"
-                    }`}
-                  >
-                    Official Adverty X Course
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setCourseForm({ ...courseForm, vendorIsPartner: true })}
-                    className={`p-2.5 rounded-xl border text-xs font-bold transition-all text-center cursor-pointer ${
-                      courseForm.vendorIsPartner
-                        ? "bg-purple-600 text-white border-purple-600 shadow-xs"
-                        : "bg-white border-indigo-200 text-indigo-900 hover:bg-indigo-100/50"
-                    }`}
-                  >
-                    Partner / Instructor Course
-                  </button>
-                </div>
-
-                {courseForm.vendorIsPartner && (
-                  <div className="p-3 bg-white rounded-xl border border-indigo-200 space-y-3 text-xs">
-                    <div className="p-2 rounded-lg bg-amber-50 border border-amber-200 text-amber-900 text-[11px] font-semibold">
-                      💡 <strong>Partner Mode Active:</strong> Enrollment fees will be transferred directly to this instructor/partner account, and confirmation will route to their WhatsApp.
-                    </div>
-
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                      <div>
-                        <label className="block text-[11px] font-bold text-slate-700 mb-1">Instructor / Partner Name *</label>
-                        <input
-                          type="text"
-                          placeholder="e.g. Sir Hamza / Partner Academy"
-                          value={courseForm.vendorName}
-                          onChange={(e) => setCourseForm({ ...courseForm, vendorName: e.target.value })}
-                          className="w-full px-3 py-1.5 rounded-lg border border-slate-300 text-xs text-slate-900 font-bold"
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-[11px] font-bold text-slate-700 mb-1">Partner WhatsApp Number *</label>
-                        <input
-                          type="text"
-                          placeholder="e.g. 0321-1234567"
-                          value={courseForm.vendorWhatsApp}
-                          onChange={(e) => setCourseForm({ ...courseForm, vendorWhatsApp: e.target.value })}
-                          className="w-full px-3 py-1.5 rounded-lg border border-slate-300 text-xs text-slate-900 font-bold"
-                        />
-                      </div>
-                    </div>
-
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
-                      <div className="p-2.5 rounded-lg bg-slate-50 border border-slate-200 space-y-1.5">
-                        <span className="text-[11px] font-bold text-amber-800 block">Instructor JazzCash Account</span>
-                        <input
-                          type="text"
-                          placeholder="JazzCash Number (e.g. 03001234567)"
-                          value={courseForm.vendorJazzCashNumber}
-                          onChange={(e) => setCourseForm({ ...courseForm, vendorJazzCashNumber: e.target.value })}
-                          className="w-full px-2.5 py-1.5 rounded-md border border-slate-300 text-xs font-mono"
-                        />
-                        <input
-                          type="text"
-                          placeholder="Account Title"
-                          value={courseForm.vendorJazzCashTitle}
-                          onChange={(e) => setCourseForm({ ...courseForm, vendorJazzCashTitle: e.target.value })}
-                          className="w-full px-2.5 py-1.5 rounded-md border border-slate-300 text-xs font-bold"
-                        />
-                      </div>
-
-                      <div className="p-2.5 rounded-lg bg-slate-50 border border-slate-200 space-y-1.5">
-                        <span className="text-[11px] font-bold text-emerald-800 block">Instructor Easypaisa Account</span>
-                        <input
-                          type="text"
-                          placeholder="Easypaisa Number (e.g. 03451234567)"
-                          value={courseForm.vendorEasypaisaNumber}
-                          onChange={(e) => setCourseForm({ ...courseForm, vendorEasypaisaNumber: e.target.value })}
-                          className="w-full px-2.5 py-1.5 rounded-md border border-slate-300 text-xs font-mono"
-                        />
-                        <input
-                          type="text"
-                          placeholder="Account Title"
-                          value={courseForm.vendorEasypaisaTitle}
-                          onChange={(e) => setCourseForm({ ...courseForm, vendorEasypaisaTitle: e.target.value })}
-                          className="w-full px-2.5 py-1.5 rounded-md border border-slate-300 text-xs font-bold"
-                        />
                       </div>
                     </div>
                   </div>
@@ -3371,117 +2969,6 @@ export default function UnifiedMasterPanel() {
                   ></textarea>
                 </div>
 
-                {/* Multi-Vendor Partner Ownership & Custom Payment Routing */}
-                <div className="sm:col-span-2 p-4 rounded-2xl bg-indigo-50/70 border border-indigo-200 space-y-3">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <span className="text-xs font-black text-indigo-950 uppercase block">
-                        🏢 Product Owner / Vendor Routing
-                      </span>
-                      <span className="text-[11px] text-indigo-700">
-                        Select whether this item belongs to Official Adverty X or a Partner Vendor
-                      </span>
-                    </div>
-                    <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-indigo-200 text-indigo-900">
-                      Multi-Vendor
-                    </span>
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-2">
-                    <button
-                      type="button"
-                      onClick={() => setSubForm({ ...subForm, vendorIsPartner: false })}
-                      className={`p-2.5 rounded-xl border text-xs font-bold transition-all text-center cursor-pointer ${
-                        !subForm.vendorIsPartner
-                          ? "bg-brand-600 text-white border-brand-600 shadow-xs"
-                          : "bg-white border-indigo-200 text-indigo-900 hover:bg-indigo-100/50"
-                      }`}
-                    >
-                      Official Adverty X (Our Accounts)
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setSubForm({ ...subForm, vendorIsPartner: true })}
-                      className={`p-2.5 rounded-xl border text-xs font-bold transition-all text-center cursor-pointer ${
-                        subForm.vendorIsPartner
-                          ? "bg-purple-600 text-white border-purple-600 shadow-xs"
-                          : "bg-white border-indigo-200 text-indigo-900 hover:bg-indigo-100/50"
-                      }`}
-                    >
-                      Partner / Vendor Product
-                    </button>
-                  </div>
-
-                  {subForm.vendorIsPartner && (
-                    <div className="p-3 bg-white rounded-xl border border-indigo-200 space-y-3 text-xs">
-                      <div className="p-2 rounded-lg bg-amber-50 border border-amber-200 text-amber-900 text-[11px] font-semibold">
-                        💡 <strong>Partner Mode Active:</strong> When customers buy this specific product, ONLY this partner's payment accounts (JazzCash / Easypaisa) will be shown, and payment confirmation will route to their WhatsApp.
-                      </div>
-
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                        <div>
-                          <label className="block text-[11px] font-bold text-slate-700 mb-1">Partner / Vendor Name *</label>
-                          <input
-                            type="text"
-                            placeholder="e.g. Partner Usman / Reseller Hub"
-                            value={subForm.vendorName}
-                            onChange={(e) => setSubForm({ ...subForm, vendorName: e.target.value })}
-                            className="w-full px-3 py-1.5 rounded-lg border border-slate-300 text-xs text-slate-900 font-bold"
-                          />
-                        </div>
-                        <div>
-                          <label className="block text-[11px] font-bold text-slate-700 mb-1">Partner WhatsApp Number *</label>
-                          <input
-                            type="text"
-                            placeholder="e.g. 0321-1234567"
-                            value={subForm.vendorWhatsApp}
-                            onChange={(e) => setSubForm({ ...subForm, vendorWhatsApp: e.target.value })}
-                            className="w-full px-3 py-1.5 rounded-lg border border-slate-300 text-xs text-slate-900 font-bold"
-                          />
-                        </div>
-                      </div>
-
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
-                        <div className="p-2.5 rounded-lg bg-slate-50 border border-slate-200 space-y-1.5">
-                          <span className="text-[11px] font-bold text-amber-800 block">Partner JazzCash Account</span>
-                          <input
-                            type="text"
-                            placeholder="JazzCash Number (e.g. 03001234567)"
-                            value={subForm.vendorJazzCashNumber}
-                            onChange={(e) => setSubForm({ ...subForm, vendorJazzCashNumber: e.target.value })}
-                            className="w-full px-2.5 py-1.5 rounded-md border border-slate-300 text-xs font-mono"
-                          />
-                          <input
-                            type="text"
-                            placeholder="Account Title (e.g. Usman Ali)"
-                            value={subForm.vendorJazzCashTitle}
-                            onChange={(e) => setSubForm({ ...subForm, vendorJazzCashTitle: e.target.value })}
-                            className="w-full px-2.5 py-1.5 rounded-md border border-slate-300 text-xs font-bold"
-                          />
-                        </div>
-
-                        <div className="p-2.5 rounded-lg bg-slate-50 border border-slate-200 space-y-1.5">
-                          <span className="text-[11px] font-bold text-emerald-800 block">Partner Easypaisa Account</span>
-                          <input
-                            type="text"
-                            placeholder="Easypaisa Number (e.g. 03451234567)"
-                            value={subForm.vendorEasypaisaNumber}
-                            onChange={(e) => setSubForm({ ...subForm, vendorEasypaisaNumber: e.target.value })}
-                            className="w-full px-2.5 py-1.5 rounded-md border border-slate-300 text-xs font-mono"
-                          />
-                          <input
-                            type="text"
-                            placeholder="Account Title (e.g. Usman Ali)"
-                            value={subForm.vendorEasypaisaTitle}
-                            onChange={(e) => setSubForm({ ...subForm, vendorEasypaisaTitle: e.target.value })}
-                            className="w-full px-2.5 py-1.5 rounded-md border border-slate-300 text-xs font-bold"
-                          />
-                        </div>
-                      </div>
-                    </div>
-                  )}
-                </div>
-
                 {/* In Stock Checkbox */}
                 <div className="sm:col-span-2 flex items-center gap-2 pt-1">
                   <input
@@ -3512,127 +2999,6 @@ export default function UnifiedMasterPanel() {
                 >
                   <Check className="w-4 h-4" />
                   <span>{editingSubItem ? "Save Changes" : "Publish to Store"}</span>
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-
-      {/* Add Partner Modal */}
-      {isAddPartnerModalOpen && (
-        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto">
-          <div className="bg-white rounded-3xl max-w-lg w-full p-6 sm:p-8 border border-slate-200 shadow-2xl relative my-6">
-            <button
-              onClick={() => setIsAddPartnerModalOpen(false)}
-              className="absolute top-6 right-6 text-slate-400 hover:text-slate-600"
-            >
-              <X className="w-5 h-5" />
-            </button>
-
-            <div className="mb-6 border-b border-slate-100 pb-4">
-              <span className="text-xs font-black uppercase tracking-wider text-purple-600">
-                Reseller Management
-              </span>
-              <h3 className="text-xl font-black text-slate-900 mt-1">
-                + Add Partner / Reseller Vendor
-              </h3>
-              <p className="text-xs text-slate-500">
-                Grant partner studio access so they can customize their store, theme, and payment accounts.
-              </p>
-            </div>
-
-            <form onSubmit={handleSavePartnerSubmit} className="space-y-4 text-xs">
-              <div>
-                <label className="block font-bold text-slate-700 mb-1">Partner Full Name *</label>
-                <input
-                  type="text"
-                  required
-                  placeholder="e.g. Muhammad Usman"
-                  value={partnerForm.name}
-                  onChange={(e) => setPartnerForm({ ...partnerForm, name: e.target.value })}
-                  className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 font-bold text-slate-900"
-                />
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div>
-                  <label className="block font-bold text-slate-700 mb-1">Partner Gmail / Email *</label>
-                  <input
-                    type="email"
-                    required
-                    placeholder="e.g. usman.partner@gmail.com"
-                    value={partnerForm.email}
-                    onChange={(e) => setPartnerForm({ ...partnerForm, email: e.target.value })}
-                    className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 font-semibold text-slate-900"
-                  />
-                </div>
-                <div>
-                  <label className="block font-bold text-slate-700 mb-1">Portal Password *</label>
-                  <input
-                    type="text"
-                    required
-                    placeholder="e.g. Partner123!"
-                    value={partnerForm.password}
-                    onChange={(e) => setPartnerForm({ ...partnerForm, password: e.target.value })}
-                    className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 font-mono text-slate-900"
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div>
-                  <label className="block font-bold text-slate-700 mb-1">WhatsApp Number *</label>
-                  <input
-                    type="text"
-                    required
-                    placeholder="e.g. 0321-1234567"
-                    value={partnerForm.phone}
-                    onChange={(e) => setPartnerForm({ ...partnerForm, phone: e.target.value })}
-                    className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-slate-900"
-                  />
-                </div>
-                <div>
-                  <label className="block font-bold text-slate-700 mb-1">Store / Brand Name</label>
-                  <input
-                    type="text"
-                    placeholder="e.g. Usman Tech Store"
-                    value={partnerForm.storeName}
-                    onChange={(e) => setPartnerForm({ ...partnerForm, storeName: e.target.value })}
-                    className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 font-bold text-slate-900"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className="block font-bold text-slate-700 mb-1">Default Theme Accent</label>
-                <select
-                  value={partnerForm.themeColor}
-                  onChange={(e) => setPartnerForm({ ...partnerForm, themeColor: e.target.value as any })}
-                  className="w-full px-3.5 py-2 rounded-xl border border-slate-300 bg-white text-slate-900 font-semibold"
-                >
-                  <option value="purple">Royal Purple</option>
-                  <option value="emerald">Emerald Green</option>
-                  <option value="blue">Electric Blue</option>
-                  <option value="rose">Rose Pink</option>
-                  <option value="amber">Amber Gold</option>
-                  <option value="indigo">Deep Indigo</option>
-                </select>
-              </div>
-
-              <div className="pt-3 border-t border-slate-100 flex items-center justify-end gap-2">
-                <button
-                  type="button"
-                  onClick={() => setIsAddPartnerModalOpen(false)}
-                  className="px-4 py-2.5 rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-50 font-semibold"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  className="px-6 py-2.5 rounded-xl bg-purple-600 hover:bg-purple-700 text-white font-bold shadow-md cursor-pointer"
-                >
-                  Create Partner Access
                 </button>
               </div>
             </form>

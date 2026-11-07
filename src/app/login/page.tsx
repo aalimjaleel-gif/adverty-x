@@ -10,8 +10,6 @@ import {
   authenticateWithPassword,
   authenticateWithGoogle,
   getRegisteredUsers,
-  getStoredPartners,
-  fetchPartnersFromServer,
   RegisteredUser
 } from "@/lib/store";
 
@@ -37,7 +35,6 @@ export default function LoginPage() {
     setEmail("");
     setPassword("");
     setSavedAccounts(getRegisteredUsers());
-    fetchPartnersFromServer();
     const t1 = setTimeout(() => {
       setEmail("");
       setPassword("");
@@ -69,11 +66,6 @@ export default function LoginPage() {
 
     if (authRes.user?.isAdmin) {
       window.location.href = "/admin";
-      return;
-    }
-
-    if (authRes.isPartner || authRes.user?.isPartner || authRes.user?.role === "Partner Vendor") {
-      window.location.href = "/partner";
       return;
     }
 
@@ -111,11 +103,6 @@ export default function LoginPage() {
       return;
     }
 
-    if (profile.isPartner || profile.role === "Partner Vendor") {
-      window.location.href = "/partner";
-      return;
-    }
-
     const searchParams = new URLSearchParams(window.location.search);
     const redirectUrl = searchParams.get("redirect") || "/profile";
     window.location.href = redirectUrl;
@@ -127,10 +114,6 @@ export default function LoginPage() {
     
     if (profile.isAdmin) {
       window.location.href = "/admin";
-      return;
-    }
-    if (profile.isPartner || profile.role === "Partner Vendor") {
-      window.location.href = "/partner";
       return;
     }
 
@@ -393,19 +376,6 @@ export default function LoginPage() {
               {(() => {
                 const clean = googleEmail.trim().toLowerCase();
                 if (!clean) return null;
-                const partners = getStoredPartners();
-                const matchedP = partners.find(p => p.email.toLowerCase() === clean);
-                if (matchedP) {
-                  return (
-                    <div className="p-3 rounded-2xl bg-purple-50 border border-purple-200 text-purple-900 text-xs flex items-center gap-2.5 animate-in fade-in">
-                      <div className="w-7 h-7 rounded-lg bg-purple-600 text-white font-bold flex items-center justify-center text-xs flex-shrink-0">P</div>
-                      <div>
-                        <div className="font-bold">Partner Vendor: {matchedP.storeName || matchedP.name}</div>
-                        <div className="text-[11px] text-purple-700">Logging in directly into your Partner Studio (/partner)</div>
-                      </div>
-                    </div>
-                  );
-                }
                 if (clean === "admin@advertyx.com" || clean === "advertyx.info@gmail.com") {
                   return (
                     <div className="p-3 rounded-2xl bg-amber-50 border border-amber-200 text-amber-900 text-xs flex items-center gap-2.5 animate-in fade-in">
